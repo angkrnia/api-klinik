@@ -7,3 +7,22 @@ Route::put('refresh-token', [App\Http\Controllers\Auth\LoginController::class, '
 Route::post('register', App\Http\Controllers\Auth\RegisterController::class);
 Route::post('forgot-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'forgotPassword']);
 Route::post('reset-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'resetPassword']);
+
+Route::middleware(['auth:api'])->group(function () {
+
+	Route::apiResource('patients', App\Http\Controllers\PatientController::class)->except(['destroy']);
+
+	// ROUTE ADMIN
+	Route::middleware(['admin'])->group(function() {
+		Route::get('doctors', [App\Http\Controllers\DoctorController::class, 'index']);
+		Route::post('doctors', [App\Http\Controllers\DoctorController::class, 'store']);
+		Route::delete('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'destroy']);
+		Route::delete('patients/{patient}', [App\Http\Controllers\PatientController::class, 'destroy']);
+	});
+
+	// ROUTE DOKTER
+	Route::middleware(['doctor'])->group(function () {
+		Route::get('doctors', [App\Http\Controllers\DoctorController::class, 'index']);
+		Route::put('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'update']);
+	});
+});
