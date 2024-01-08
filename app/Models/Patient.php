@@ -26,6 +26,11 @@ class Patient extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function history()
+    {
+        return $this->hasMany(History::class);
+    }
+
     public function scopeKeywordSearch(Builder $query, string $searchKeyword): Builder
     {
         $columns = $this->fillable;

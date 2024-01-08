@@ -55,11 +55,11 @@ class PatientController extends Controller
         $patient = Patient::create($request->validated());
 
         return response()->json([
-            'code'      => 200,
+            'code'      => 201,
             'status'    => true,
             'message'   => 'Pasien baru berhasil ditambahkankan.',
             'data'      => $patient
-        ]);
+        ], 201);
     }
 
     /**

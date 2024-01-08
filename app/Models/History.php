@@ -5,18 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Doctor extends Model
+class History extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'fullname',
-        'phone',
-        'user_id',
+        'patient_id',
+        'queue_id',
+        'complaint',
+        'diagnosa',
     ];
 
-    public function user()
+    public function queue()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Queue::class);
     }
 }
