@@ -22,9 +22,7 @@ class QueueRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "patient_id" =>  ['required', 'exists:patients,id'],
-            "doctor_id" =>  ['required', 'exists:doctors,id'],
-            "complaint" =>  ['required', 'string', 'max:255'],
+            "complaint" =>  ['nullable', 'string', 'max:255'],
             "status" =>  ['nullable', 'string', 'max:255'],
         ];
     }

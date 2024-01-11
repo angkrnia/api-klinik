@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Queue\QueueRequest;
+use App\Models\Doctor;
 use App\Models\Queue;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -18,26 +19,33 @@ class QueueController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        $request = $request->query();
+        $query = Queue::query();
 
-        if ($user->role === 'admin') {
-            $request = $request->query();
-            $query = Queue::query();
+        if (isset($request['search'])) {
+            $searchKeyword = $request['search'];
+            $query->keywordSearch($searchKeyword);
+        }
 
-            if (isset($request['search'])) {
-                $searchKeyword = $request['search'];
-                $query->keywordSearch($searchKeyword);
-            }
+        if ($user->role === 'pasien' || $user->role === 'patient') {
+            $query->where('patient_id', $user->id);
+        } else if ($user->role === 'doctor' || $user->role === 'dokter') {
+            $doctor = Doctor::where('user_id', $user->id)->first();
+            $query->where('doctor_id', $doctor->id);
+        }
 
-            $query->orderBy('created_at', 'desc');
+        if (isset($request['date']) && !empty($request['date'])) {
+            $date = $request['date'];
+            $query->whereDate('created_at', $date);
+        }
+        
+        $query->orderBy('created_at', 'desc');
 
-            if (isset($request['limit']) || isset($request['page'])) {
-                $limit = $request['limit'] ?? 10;
-                $result = $query->with(['patient', 'doctor'])->paginate($limit);
-            } else {
-                $result = $query->with(['patient', 'doctor'])->get(); // Untuk Print atau Download
-            }
+        if (isset($request['limit']) || isset($request['page'])) {
+            $limit = $request['limit'] ?? 10;
+            $result = $query->with(['patient', 'doctor', 'history'])->paginate($limit);
         } else {
-            $result = Queue::with(['patient', 'doctor'])->where('user_id', $user->id)->first();
+            $result = $query->with(['patient', 'doctor', 'history'])->get(); // Untuk Print atau Download
         }
 
         $currentDate = Carbon::now()->toDateString();
@@ -48,8 +56,8 @@ class QueueController extends Controller
         return response()->json([
             'code'          => 200,
             'status'        => true,
+            'antrian_hari_ini' => $queueCount,
             'data'          => $result,
-            'total_antrian' => $queueCount,
         ]);
     }
 
@@ -154,7 +162,13 @@ class QueueController extends Controller
      */
     public function update(QueueRequest $request, Queue $queue)
     {
-        $queue->update($request->validated());
+        $request->validate([
+            'status' => ['required', 'string']
+        ]);
+
+        $queue->update([
+            'status' => $request->status
+        ]);
 
         return response()->json([
             'code'      => 200,
