@@ -26,4 +26,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::middleware(['doctor'])->group(function () {
 		Route::put('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'update']);
 	});
+
+	// ROUTE USERS
+	Route::apiResource('users', App\Http\Controllers\UserController::class);
 });

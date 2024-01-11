@@ -23,7 +23,8 @@ class DoctorRequest extends FormRequest
     {
         return [
             'fullname'  => ['required', 'string', 'max:255'],
-            'phone'     => ['nullable', 'string', 'max:20'],
+            'phone'     => ['required', 'string', 'max:20'],
+            'user_id'   => ['nullable', 'exits:users,id']
         ];
     }
 }
