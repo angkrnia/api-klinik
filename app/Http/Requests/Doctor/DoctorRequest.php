@@ -22,9 +22,14 @@ class DoctorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'fullname'  => ['required', 'string', 'max:255'],
-            'phone'     => ['required', 'string', 'max:20'],
-            'user_id'   => ['nullable', 'exits:users,id']
+            'fullname'     => ['required', 'string', 'max:255'],
+            'phone'        => ['required', 'string', 'max:20'],
+            'description'  => ['nullable', 'string', 'max:255'],
+            'user_id'      => ['nullable', 'exits:users,id'],
+            'schedule'     => ['nullable', 'array'],
+            'schedule.*.day'    => ['required', 'string'],
+            'schedule.*.start'  => ['required', 'string'],
+            'schedule.*.end'    => ['required', 'string'],
         ];
     }
 }

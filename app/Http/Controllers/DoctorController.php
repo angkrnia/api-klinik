@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Doctor\DoctorRequest;
 use App\Models\Doctor;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class DoctorController extends Controller
 {
@@ -30,12 +32,12 @@ class DoctorController extends Controller
 
             if (isset($request['limit']) || isset($request['page'])) {
                 $limit = $request['limit'] ?? 10;
-                $result = $query->with('user')->paginate($limit);
+                $result = $query->with(['user', 'schedules'])->paginate($limit);
             } else {
-                $result = $query->with('user')->get(); // Untuk Print atau Download
+                $result = $query->with(['user', 'schedules'])->get(); // Untuk Print atau Download
             }
         } else {
-            $result = Doctor::with('user')->where('user_id', $user->id)->first();
+            $result = Doctor::with(['user', 'schedules'])->where('user_id', $user->id)->first();
         }
 
         return response()->json([
@@ -58,14 +60,39 @@ class DoctorController extends Controller
      */
     public function store(DoctorRequest $request)
     {
-        $doctor = Doctor::create($request->validated());
+        try {
+            DB::beginTransaction();
 
-        return response()->json([
-            'code'      => 200,
-            'status'    => true,
-            'message'   => 'Dokter baru berhasil ditambahkankan.',
-            'data'      => $doctor
-        ]);
+            // Membuat dokter baru
+            $doctor = Doctor::create($request->validated());
+
+            // Menyimpan jadwal
+            if (isset($request->schedule) && is_array($request->schedule)) {
+                foreach ($request->schedule as $schedule) {
+                    $doctor->schedules()->create([
+                        'day'   => $schedule['day'],
+                        'start' => Carbon::parse($schedule['start'])->format('H:i:s'),
+                        'end'   => Carbon::parse($schedule['end'])->format('H:i:s'),
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'code'      => 200,
+                'status'    => true,
+                'message'   => 'Dokter baru berhasil ditambahkan.',
+                'data'      => $doctor
+            ]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'code'      => 500,
+                'status'    => false,
+                'message'   => $th->getMessage(),
+            ], 500);
+        }
     }
 
     /**
