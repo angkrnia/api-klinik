@@ -26,8 +26,10 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::middleware(['doctor'])->group(function () {
 		Route::put('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'update']);
 		Route::put('queue/{queue}', [App\Http\Controllers\QueueController::class, 'update']);
+		Route::put('queue/{queue}/selesai', [App\Http\Controllers\QueueController::class, 'selesai']);
 	});
 
-	// ROUTE USERS
+	// ROUTE
 	Route::apiResource('users', App\Http\Controllers\UserController::class);
+	Route::apiResource('schedules', App\Http\Controllers\ScheduleDoctorController::class);
 });

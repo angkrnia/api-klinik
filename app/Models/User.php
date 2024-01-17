@@ -4,7 +4,6 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use App\Policies\UserPolicy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -21,7 +20,6 @@ class User extends Authenticatable implements JWTSubject
      * @var array<int, string>
      */
     protected $fillable = [
-        'username',
         'email',
         'password',
         'refresh_token'
@@ -67,7 +65,6 @@ class User extends Authenticatable implements JWTSubject
     {
         return [
             'id'        => $this->id,
-            'username'  => $this->username,
             'email'     => $this->email,
             'role'      => $this->role
         ];
@@ -76,5 +73,10 @@ class User extends Authenticatable implements JWTSubject
     public function doctor()
     {
         return $this->hasOne(Doctor::class);
+    }
+
+    public function patient()
+    {
+        return $this->hasOne(Patient::class);
     }
 }

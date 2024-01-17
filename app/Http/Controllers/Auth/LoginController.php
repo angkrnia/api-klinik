@@ -16,20 +16,20 @@ class LoginController extends Controller
     public function index(Request $request)
     {
         $request->validate([
-            'username' => ['required'],
-            'password' => ['required']
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'password' => ['required', 'string', 'max:255']
         ]);
 
         try {
 
-            $credentials = $request->only('username', 'password');
+            $credentials = $request->only('email', 'password');
             $token = Auth::attempt($credentials);
             
             if (!$token) {
                 return response()->json([
                     'code' => 401,
                     'status' => false,
-                    'message' => 'Username atau password salah.',
+                    'message' => 'Email atau password salah.',
                 ], 401);
             }
 

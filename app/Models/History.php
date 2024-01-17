@@ -14,6 +14,7 @@ class History extends Model
         'queue_id',
         'complaint',
         'diagnosa',
+        'saran',
     ];
 
     public function queue()

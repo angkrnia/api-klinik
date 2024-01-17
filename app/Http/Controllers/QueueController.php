@@ -190,4 +190,39 @@ class QueueController extends Controller
             'message'   => 'Antrian berhasil dihapus.',
         ]);
     }
+
+    public function selesai(Request $request, Queue $queue)
+    {
+        $request->validate([
+            'diagnosa'  => ['nullable', 'string', 'max:255'],
+            'saran'     => ['nullable', 'string', 'max:255']
+        ]);
+
+        try {
+            $queue->update([
+                'status' => Queue::SELESAI
+            ]);
+
+            $queue->history()->updateOrCreate(
+                ['queue_id' => $queue->id],
+                [
+                    'diagnosa' => $request->diagnosa,
+                    'saran' => $request->saran,
+                    'patient_id' => $queue->patient_id,
+                ]
+            );
+
+            return response()->json([
+                'code' => 200,
+                'status' => true,
+                'message' => 'Antrian berhasil diupdate.',
+            ]);
+        } catch (\Throwable $th) {
+            if ($th instanceof ModelNotFoundException) {
+                return response()->json(['error' => 'Antrian tidak ditemukan'], 404);
+            } else {
+                return response()->json(['error' => $th->getMessage()], 500);
+            }
+        }
+    }
 }

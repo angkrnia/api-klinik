@@ -9,6 +9,8 @@ class Queue extends Model
 {
     use HasFactory;
 
+    const SELESAI = 'selesai';
+
     protected $table = 'queue_logs';
     protected $fillable = [
         'queue',

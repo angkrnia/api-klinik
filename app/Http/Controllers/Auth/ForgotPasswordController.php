@@ -12,7 +12,7 @@ class ForgotPasswordController extends Controller
     public function forgotPassword(Request $request)
     {
         $request->validate([
-            'email' => ['required', 'max:15'],
+            'email' => ['required', 'max:15', 'exists:users,email'],
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -22,7 +22,7 @@ class ForgotPasswordController extends Controller
             response()->json([
                 'code' => 404,
                 'status' => true,
-                'message' => 'Nomor whatsapp tidak ditemukan.'
+                'message' => 'User tidak ditemukan.'
             ]);
         }
 
@@ -35,7 +35,7 @@ class ForgotPasswordController extends Controller
         return response()->json([
             'code' => 200,
             'status' => true,
-            'message' => 'Link pergantian password telah dikirim ke nomor whatsapp Anda.'
+            'message' => 'Link pergantian password telah dikirim ke email Anda.'
         ]);
     }
 

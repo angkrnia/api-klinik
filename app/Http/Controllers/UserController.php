@@ -33,8 +33,10 @@ class UserController extends Controller
             } else {
                 $result = $query->get(); // Untuk Print atau Download
             }
-        } else {
-            $result = User::where('id', $user->id)->first();
+        } else if($user->role === 'dokter') {
+            $result = User::with('doctor.schedules')->where('id', $user->id)->first();
+        } else if($user->role === 'patient') {
+            $result = User::with('patient.history')->where('id', $user->id)->first();
         }
 
         return response()->json([
@@ -60,10 +62,16 @@ class UserController extends Controller
         try {
             $pasien = User::findOrFail($id);
 
+            if ($pasien->role === 'dokter') {
+                $pasien->load('doctor');
+            } else if ($pasien->role === 'pasien') {
+                $pasien->load('patient');
+            }
+
             return response()->json([
-                'code'      => 200,
-                'status'    => true,
-                'data'      => $pasien
+                'code'   => 200,
+                'status' => true,
+                'data'   => $pasien
             ]);
         } catch (\Throwable $th) {
             if ($th instanceof ModelNotFoundException) {
