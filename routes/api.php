@@ -13,6 +13,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('patients', App\Http\Controllers\PatientController::class)->except(['destroy']);
 	Route::get('doctors', [App\Http\Controllers\DoctorController::class, 'index']);
 	Route::get('queue', [App\Http\Controllers\QueueController::class, 'index']);
+	Route::get('queue/check-antrian', [App\Http\Controllers\QueueController::class, 'checkAntrian']);
 	Route::post('queue', [App\Http\Controllers\QueueController::class, 'store']);
 
 	// ROUTE ADMIN

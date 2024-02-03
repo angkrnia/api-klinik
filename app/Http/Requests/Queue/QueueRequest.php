@@ -22,7 +22,7 @@ class QueueRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "complaint" =>  ['nullable', 'string', 'max:255'],
+            "complaint" =>  ['required', 'string', 'max:255'],
             "status" =>  ['nullable', 'string', 'max:255'],
         ];
     }

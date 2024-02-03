@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 class QueueController extends Controller
 {
@@ -38,8 +39,13 @@ class QueueController extends Controller
             $date = $request['date'];
             $query->whereDate('created_at', $date);
         }
-        
-        $query->orderBy('created_at', 'desc');
+
+        if (isset($request['status']) && !empty($request['status'])) {
+            $status = $request['status'];
+            $query->whereStatus($status);
+        }
+
+        $query->orderBy('created_at', 'asc');
 
         if (isset($request['limit']) || isset($request['page'])) {
             $limit = $request['limit'] ?? 10;
@@ -52,12 +58,30 @@ class QueueController extends Controller
 
         // Menghitung jumlah antrian pada hari ini
         $queueCount = Queue::whereDate('created_at', $currentDate)->count();
+        $sisaAntrian = Queue::where('status', 'waiting')->whereDate('created_at', $currentDate)->count();
 
         return response()->json([
             'code'          => 200,
             'status'        => true,
             'antrian_hari_ini' => $queueCount,
+            'sisa_antrian' => $sisaAntrian,
             'data'          => $result,
+        ]);
+    }
+
+    public function checkAntrian()
+    {
+        $currentDate = Carbon::now()->toDateString();
+
+        // Menghitung jumlah antrian pada hari ini
+        $queueCount = Queue::whereDate('created_at', $currentDate)->count();
+        $sisaAntrian = Queue::where('status', 'waiting')->whereDate('created_at', $currentDate)->count();
+
+        return response()->json([
+            'code'          => 200,
+            'status'        => true,
+            'antrian_hari_ini' => $queueCount,
+            'sisa_antrian' => $sisaAntrian,
         ]);
     }
 
@@ -160,20 +184,28 @@ class QueueController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(QueueRequest $request, Queue $queue)
+    public function update(Request $request, Queue $queue)
     {
-        $request->validate([
-            'status' => ['required', 'string']
-        ]);
-
         $queue->update([
             'status' => $request->status
         ]);
+
+        $soundPath = public_path('assets/voice-announcement/' . $queue->queue . '.mp3');
+
+        // Memeriksa apakah file suara ada
+        if (File::exists($soundPath)) {
+            // Jika file suara ada, mengembalikan URL untuk file tersebut
+            $soundUrl = asset('assets/voice-announcement/' . $queue->queue . '.mp3');
+        } else {
+            // Jika file suara tidak ada, mengembalikan URL untuk file 'selanjutnya.mp3'
+            $soundUrl = asset('assets/voice-announcement/selanjutnya.mp3');
+        }
 
         return response()->json([
             'code'      => 200,
             'status'    => true,
             'message'   => 'Antrian berhasil diupdate.',
+            'sound'     => $soundUrl,
         ]);
     }
 
