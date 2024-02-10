@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,12 +16,18 @@ class RegisterController extends Controller
     public function __invoke(Request $request)
     {
         $request->validate([
+            'fullname' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', Rule::unique('users', 'email')],
             'password' => ['required', 'min:6'],
         ]);
 
         try {
             $user = User::create($request->all());
+
+            Patient::create([
+                'user_id' => $user->id,
+                'fullname' => $request->fullname,
+            ]);
     
             return response()->json([
                 'code'      => 201,
@@ -32,7 +39,7 @@ class RegisterController extends Controller
             return response()->json([
                 'code'    => 500,
                 'status'  => false,
-                'message' => $th->getMessage() ?: '',
+                'message' => $th->getMessage() ?: 'Registrasi gagal.',
             ], 500);
         }
     }

@@ -35,7 +35,7 @@ class UserController extends Controller
             }
         } else if($user->role === 'dokter') {
             $result = User::with('doctor.schedules')->where('id', $user->id)->first();
-        } else if($user->role === 'patient') {
+        } else if($user->role === 'patient' || $user->role === 'pasien') {
             $result = User::with('patient.history')->where('id', $user->id)->first();
         }
 

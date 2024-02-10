@@ -27,7 +27,7 @@ class StorePatientRequest extends FormRequest
             'fullname'  => ['required', 'string', 'max:255'],
             'gender'    => ['required', 'string', 'max:20'],
             'birthday'  => ['nullable', 'date'],
-            'age'       => ['required', 'integer',],
+            'age'       => ['required', 'integer'],
             'phone'     => ['nullable', 'string', 'max:20'],
             'address'   => ['required', 'string', 'max:255'],
         ];
