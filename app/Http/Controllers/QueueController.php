@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class QueueController extends Controller
 {
@@ -28,11 +29,14 @@ class QueueController extends Controller
             $query->keywordSearch($searchKeyword);
         }
 
-        if ($user->role === 'pasien' || $user->role === 'patient') {
-            $query->where('patient_id', $user->id);
-        } else if ($user->role === 'doctor' || $user->role === 'dokter') {
-            $doctor = Doctor::where('user_id', $user->id)->first();
-            $query->where('doctor_id', $doctor->id);
+        if (!isset($request['data']) && @$request['data'] !== 'all') {
+            if ($user->role === 'pasien' || $user->role === 'patient') {
+                $query->where('patient_id', $user->id);
+            } elseif ($user->role === 'doctor' || $user->role === 'dokter') {
+                $query->whereHas('doctor', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                });
+            }
         }
 
         if (isset($request['date']) && !empty($request['date'])) {
@@ -71,18 +75,46 @@ class QueueController extends Controller
 
     public function checkAntrian()
     {
+        $user = Auth::user();
         $currentDate = Carbon::now()->toDateString();
-
+        
         // Menghitung jumlah antrian pada hari ini
         $queueCount = Queue::whereDate('created_at', $currentDate)->count();
-        $sisaAntrian = Queue::where('status', 'waiting')->whereDate('created_at', $currentDate)->count();
+        $currentAntrian = Queue::where('status', 'on process')->whereDate('created_at', $currentDate)->value('queue');
+        
+        if ($user->role == 'admin' || $user->role == 'dokter') {
+            $sisaAntrian = Queue::where('status', 'waiting')->whereDate('created_at', $currentDate)->count();
 
-        return response()->json([
-            'code'          => 200,
-            'status'        => true,
-            'antrian_hari_ini' => $queueCount,
-            'sisa_antrian' => $sisaAntrian,
-        ]);
+            return response()->json([
+                'code'      => 200,
+                'status'    => true,
+                'data'      => [
+                    'antrian_hari_ini' => $queueCount,
+                    'sisa_antrian' => $sisaAntrian,
+                    'antrian_saat_ini' => $currentAntrian,
+                ]
+            ]);
+        } else {
+            $antrianSaya = Queue::where('patient_id', $user->patient->id)->whereDate('created_at', $currentDate)->whereStatus('waiting')->value('queue');
+            $sisaAntrian = Queue::where('status', 'waiting')
+            ->whereDate('created_at', $currentDate)
+            ->where('queue', $antrianSaya)
+            ->value('queue') - 
+            Queue::where('status', 'waiting')
+            ->whereDate('created_at', $currentDate)
+            ->min('queue');
+
+            return response()->json([
+                'code'      => 200,
+                'status'    => true,
+                'data' => [
+                    'total_antrian_hari_ini' => $queueCount,
+                    'antrian_saat_ini' => $currentAntrian,
+                    'antrian_saya' => $antrianSaya,
+                    'sisa_antrian' => $sisaAntrian,
+                ]
+            ]);
+        }
     }
 
     /**
@@ -104,17 +136,17 @@ class QueueController extends Controller
             $patientId = $request->input('patient_id');
 
             $existingWaitingQueue = Queue::whereDate('created_at', $currentDate)
-            ->where('status', 'waiting')
-            ->where('patient_id', $patientId)
-            ->first();
+                ->where('status', 'waiting')
+                ->where('patient_id', $patientId)
+                ->first();
 
             if ($existingWaitingQueue) {
                 return response()->json(['message' => 'Anda masih memiliki antrian yang sedang ditunggu. Tidak bisa membuat antrian baru'], 422);
             }
 
             $lastQueue = Queue::whereDate('created_at', $currentDate)
-            ->orderByDesc('queue')
-            ->first();
+                ->orderByDesc('queue')
+                ->first();
 
             if ($lastQueue) {
                 $newQueueNumber = $lastQueue->queue + 1;
@@ -148,7 +180,6 @@ class QueueController extends Controller
                 'message'   => $th->getMessage() ?? '',
             ]);
         }
-
     }
 
     /**

@@ -22,8 +22,8 @@ class FacilityController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:50'],
-            'description' => ['nullable', 'string', 'max:255'],
-            'image' => ['required', 'image', 'mimes:png,jpg,jpeg'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'image' => ['required', 'image', 'mimes:png,jpg,jpeg,webp'],
         ]);
 
         $imageFile = $request->file('image');

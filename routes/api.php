@@ -15,13 +15,13 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('queue', [App\Http\Controllers\QueueController::class, 'index']);
 	Route::get('queue/check-antrian', [App\Http\Controllers\QueueController::class, 'checkAntrian']);
 	Route::post('queue', [App\Http\Controllers\QueueController::class, 'store']);
+	Route::get('facilities', [\App\Http\Controllers\FacilityController::class, 'index']);
 
 	// ROUTE ADMIN
 	Route::middleware(['admin'])->group(function() {
 		Route::post('doctors', [App\Http\Controllers\DoctorController::class, 'store']);
 		Route::delete('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'destroy']);
 		Route::delete('patients/{patient}', [App\Http\Controllers\PatientController::class, 'destroy']);
-		Route::get('facilities', [\App\Http\Controllers\FacilityController::class, 'index']);
 		Route::post('facilities', [\App\Http\Controllers\FacilityController::class, 'store']);
 		Route::delete('facilities/{facility}', [\App\Http\Controllers\FacilityController::class, 'destroy']);
 	});
