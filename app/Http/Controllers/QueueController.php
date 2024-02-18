@@ -175,8 +175,8 @@ class QueueController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([
-                'code'      => 200,
-                'status'    => true,
+                'code'      => 500,
+                'status'    => false,
                 'message'   => $th->getMessage() ?? '',
             ]);
         }

@@ -26,4 +26,26 @@ class QueueRequest extends FormRequest
             "status" =>  ['nullable', 'string', 'max:255'],
         ];
     }
+
+    /**
+     * Message
+     */
+    public function messages(): array
+    {
+        return [
+            'complaint.required' => 'Form keluhan wajib diisi!',
+            'complaint.string' => 'Form keluhan harus berupa teks!',
+            'complaint.max' => 'Panjang teks keluhan hanya 255 karakter!',
+        ];
+    }
+
+    /**
+     * Message
+     */
+    public function attributes(): array
+    {
+        return [
+            "complaint" => "keluhan"
+        ];
+    }
 }

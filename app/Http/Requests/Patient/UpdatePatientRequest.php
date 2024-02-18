@@ -23,7 +23,7 @@ class UpdatePatientRequest extends FormRequest
     {
         return [
             'user_id'   => ['nullable', 'integer', 'exists:users,id'],
-            'record_no' => ['required', 'string', 'max:50',],
+            'record_no' => ['nullable', 'string', 'max:50',],
             'fullname'  => ['required', 'string', 'max:255'],
             'gender'    => ['required', 'string', 'max:20'],
             'birthday'  => ['nullable', 'date'],
