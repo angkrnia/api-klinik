@@ -108,7 +108,7 @@ class QueueController extends Controller
                 'code'      => 200,
                 'status'    => true,
                 'data' => [
-                    'total_antrian_hari_ini' => $queueCount,
+                    'antrian_hari_ini' => $queueCount,
                     'antrian_saat_ini' => $currentAntrian,
                     'antrian_saya' => $antrianSaya,
                     'sisa_antrian' => $sisaAntrian,
