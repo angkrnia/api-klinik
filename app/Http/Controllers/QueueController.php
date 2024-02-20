@@ -23,6 +23,7 @@ class QueueController extends Controller
         $user = Auth::user();
         $request = $request->query();
         $query = Queue::query();
+        $currentDate = Carbon::now()->toDateString();
 
         if (isset($request['search'])) {
             $searchKeyword = $request['search'];
@@ -31,10 +32,11 @@ class QueueController extends Controller
 
         if (!isset($request['data']) && @$request['data'] !== 'all') {
             if ($user->role === 'pasien' || $user->role === 'patient') {
-                $query->where('patient_id', $user->id);
+                $antrianSaya = Queue::where('patient_id', $user->patient->id)->whereDate('created_at', $currentDate)->whereStatus('waiting')->value('queue');
+                $query->where('patient_id', $user->patient->id);
             } elseif ($user->role === 'doctor' || $user->role === 'dokter') {
                 $query->whereHas('doctor', function ($q) use ($user) {
-                    $q->where('user_id', $user->id);
+                    $q->where('user_id', $user->doctor->id);
                 });
             }
         }
@@ -58,18 +60,19 @@ class QueueController extends Controller
             $result = $query->with(['patient', 'doctor', 'history'])->get(); // Untuk Print atau Download
         }
 
-        $currentDate = Carbon::now()->toDateString();
-
         // Menghitung jumlah antrian pada hari ini
         $queueCount = Queue::whereDate('created_at', $currentDate)->count();
         $sisaAntrian = Queue::where('status', 'waiting')->whereDate('created_at', $currentDate)->count();
+        $currentAntrian = Queue::where('status', 'on process')->whereDate('created_at', $currentDate)->value('queue');
 
         return response()->json([
-            'code'          => 200,
-            'status'        => true,
+            'code'             => 200,
+            'status'           => true,
             'antrian_hari_ini' => $queueCount,
-            'sisa_antrian' => $sisaAntrian,
-            'data'          => $result,
+            'antrian_saat_ini' => $currentAntrian,
+            'antrian_saya'     => isset($antrianSaya) ? $antrianSaya : null,
+            'sisa_antrian'     => $sisaAntrian,
+            'data'             => $result,
         ]);
     }
 
@@ -90,7 +93,7 @@ class QueueController extends Controller
                 'status'    => true,
                 'data'      => [
                     'antrian_hari_ini' => $queueCount,
-                    'sisa_antrian' => $sisaAntrian,
+                    'sisa_antrian' => (int) $sisaAntrian + 1,
                     'antrian_saat_ini' => $currentAntrian,
                 ]
             ]);
@@ -110,8 +113,8 @@ class QueueController extends Controller
                 'data' => [
                     'antrian_hari_ini' => $queueCount,
                     'antrian_saat_ini' => $currentAntrian,
-                    'antrian_saya' => $antrianSaya,
-                    'sisa_antrian' => $sisaAntrian,
+                    'antrian_saya'     => $antrianSaya,
+                    'sisa_antrian'     => (int) $sisaAntrian + 1,
                 ]
             ]);
         }
