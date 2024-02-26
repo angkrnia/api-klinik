@@ -10,6 +10,7 @@ class Queue extends Model
     use HasFactory;
 
     const SELESAI = 'done';
+    const BATAL = 'canceled';
 
     protected $table = 'queue_logs';
     protected $fillable = [

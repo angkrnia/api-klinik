@@ -51,7 +51,12 @@ class QueueController extends Controller
             $query->whereStatus($status);
         }
 
-        $query->orderBy('created_at', 'asc');
+        if($user->role === 'dokter') {
+            $query->orderBy('created_at', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
 
         if (isset($request['limit']) || isset($request['page'])) {
             $limit = $request['limit'] ?? 10;
@@ -93,7 +98,7 @@ class QueueController extends Controller
                 'status'    => true,
                 'data'      => [
                     'antrian_hari_ini' => $queueCount,
-                    'sisa_antrian' => (int) $sisaAntrian + 1,
+                    'sisa_antrian' => $sisaAntrian,
                     'antrian_saat_ini' => $currentAntrian,
                 ]
             ]);
@@ -282,6 +287,30 @@ class QueueController extends Controller
                 'code' => 200,
                 'status' => true,
                 'message' => 'Antrian berhasil diupdate.',
+            ]);
+        } catch (\Throwable $th) {
+            if ($th instanceof ModelNotFoundException) {
+                return response()->json(['error' => 'Antrian tidak ditemukan'], 404);
+            } else {
+                return response()->json(['error' => $th->getMessage()], 500);
+            }
+        }
+    }
+    public function batal(Request $request, Queue $queue)
+    {
+        $request->validate([
+            'status'  => ['required', 'string', 'max:255'],
+        ]);
+
+        try {
+            $queue->update([
+                'status' => Queue::BATAL
+            ]);
+
+            return response()->json([
+                'code' => 200,
+                'status' => true,
+                'message' => 'Antrian berhasil dibatalkan.',
             ]);
         } catch (\Throwable $th) {
             if ($th instanceof ModelNotFoundException) {

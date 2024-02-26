@@ -16,6 +16,8 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('queue/check-antrian', [App\Http\Controllers\QueueController::class, 'checkAntrian']);
 	Route::post('queue', [App\Http\Controllers\QueueController::class, 'store']);
 	Route::get('facilities', [\App\Http\Controllers\FacilityController::class, 'index']);
+	Route::put('queue/{queue}/selesai', [App\Http\Controllers\QueueController::class, 'selesai']);
+	Route::put('queue/{queue}/batal', [App\Http\Controllers\QueueController::class, 'batal']);
 
 	// ROUTE ADMIN
 	Route::middleware(['admin'])->group(function() {
@@ -30,7 +32,6 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::middleware(['doctor'])->group(function () {
 		Route::put('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'update']);
 		Route::put('queue/{queue}', [App\Http\Controllers\QueueController::class, 'update']);
-		Route::put('queue/{queue}/selesai', [App\Http\Controllers\QueueController::class, 'selesai']);
 	});
 
 	// ROUTE
