@@ -17,27 +17,21 @@ class DoctorController extends Controller
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $request = $request->query();
+        $query = Doctor::query();
 
-        if ($user->role === 'admin') {
-            $request = $request->query();
-            $query = Doctor::query();
+        if (isset($request['search'])) {
+            $searchKeyword = $request['search'];
+            $query->keywordSearch($searchKeyword);
+        }
 
-            if (isset($request['search'])) {
-                $searchKeyword = $request['search'];
-                $query->keywordSearch($searchKeyword);
-            }
+        $query->orderBy('created_at', 'desc');
 
-            $query->orderBy('created_at', 'desc');
-
-            if (isset($request['limit']) || isset($request['page'])) {
-                $limit = $request['limit'] ?? 10;
-                $result = $query->with(['user', 'schedules'])->paginate($limit);
-            } else {
-                $result = $query->with(['user', 'schedules'])->get(); // Untuk Print atau Download
-            }
+        if (isset($request['limit']) || isset($request['page'])) {
+            $limit = $request['limit'] ?? 10;
+            $result = $query->with(['user', 'schedules'])->paginate($limit);
         } else {
-            $result = Doctor::with(['user', 'schedules'])->where('user_id', $user->id)->first();
+            $result = $query->with(['user', 'schedules'])->get(); // Untuk Print atau Download
         }
 
         return response()->json([
