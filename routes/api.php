@@ -18,6 +18,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('facilities', [\App\Http\Controllers\FacilityController::class, 'index']);
 	Route::put('queue/{queue}/selesai', [App\Http\Controllers\QueueController::class, 'selesai']);
 	Route::put('queue/{queue}/batal', [App\Http\Controllers\QueueController::class, 'batal']);
+	Route::put('users/change-password', [App\Http\Controllers\UserController::class, 'changePassword']);
 
 	// ROUTE ADMIN
 	Route::middleware(['admin'])->group(function() {
@@ -25,6 +26,7 @@ Route::middleware(['auth:api'])->group(function () {
 		Route::delete('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'destroy']);
 		Route::delete('patients/{patient}', [App\Http\Controllers\PatientController::class, 'destroy']);
 		Route::post('facilities', [\App\Http\Controllers\FacilityController::class, 'store']);
+		Route::put('facilities/{facility}', [\App\Http\Controllers\FacilityController::class, 'update']);
 		Route::delete('facilities/{facility}', [\App\Http\Controllers\FacilityController::class, 'destroy']);
 	});
 

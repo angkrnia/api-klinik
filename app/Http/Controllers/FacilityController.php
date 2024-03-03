@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Facility;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class FacilityController extends Controller
 {
@@ -43,6 +44,39 @@ class FacilityController extends Controller
             'message'   => 'Fasilitas baru berhasil ditambahkan.',
             'data'      => $data
         ], 201);
+    }
+
+    public function update(Request $request, Facility $facility)
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:50'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'image' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp'],
+        ]);
+
+        if ($request->hasFile('image')) {
+            $imageFile = $request->file('image');
+            $imageName = date('md_His') . '_' . $imageFile->getClientOriginalName();
+            $imagePath = $imageFile->move(public_path('facilities'), $imageName);
+            $imageUrl = url('facilities/' . $imageName);
+        }
+
+        $facility->fill([
+            'name' => $request->name,
+            'description' => $request->description,
+        ]);
+
+        if (isset($imageUrl)) {
+            $facility->image = $imageUrl;
+        }
+
+        $facility->save();
+
+        return response()->json([
+            'code'      => 200,
+            'status'    => true,
+            'message'   => 'Fasilitas baru berhasil diupdate.',
+        ]);
     }
 
     public function destroy(Facility $facility)
