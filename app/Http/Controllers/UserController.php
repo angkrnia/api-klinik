@@ -97,7 +97,7 @@ class UserController extends Controller
             'fullname' => ['required', 'string', 'max:255'],
             'gender' => ['nullable', 'string', 'max:12'],
             'birthday' => ['nullable', 'string', 'max:15'],
-            'age' => ['nullable', 'string', 'max:2'],
+            'age' => ['nullable', 'integer'],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
         ]);
@@ -199,7 +199,7 @@ class UserController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:4', 'confirmed'],
         ]);
 
         try {
