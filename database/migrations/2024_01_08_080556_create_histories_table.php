@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('queue_id');
             $table->string('complaint')->nullable();
             $table->string('diagnosa')->nullable();
+            $table->string('saran')->nullable();
             $table->timestamps();
 
             $table->foreign('patient_id')->on('patients')->references('id')->onDelete('cascade');

@@ -19,6 +19,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::put('queue/{queue}/selesai', [App\Http\Controllers\QueueController::class, 'selesai']);
 	Route::put('queue/{queue}/batal', [App\Http\Controllers\QueueController::class, 'batal']);
 	Route::put('users/change-password', [App\Http\Controllers\UserController::class, 'changePassword']);
+	Route::get('histories', App\Http\Controllers\HistoryController::class);
 
 	// ROUTE ADMIN
 	Route::middleware(['admin'])->group(function() {

@@ -22,7 +22,7 @@ class ScheduleDoctorController extends Controller
 
         $currentHour = Carbon::now()->format('H:i');
 
-        $schedule = Schedule::with('doctor')->where('day', $currentDay)
+        $schedule = Schedule::with(DOKTER)->where('day', $currentDay)
         ->where('start', '<=', $currentHour)
         ->where('end', '>=', $currentHour)
         ->first();

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class RegisterController extends Controller
@@ -21,6 +22,7 @@ class RegisterController extends Controller
             'password' => ['required', 'min:6'],
         ]);
 
+        DB::beginTransaction();
         try {
             $user = User::create($request->all());
 
@@ -28,6 +30,8 @@ class RegisterController extends Controller
                 'user_id' => $user->id,
                 'fullname' => $request->fullname,
             ]);
+
+            DB::commit();
     
             return response()->json([
                 'code'      => 201,
@@ -36,6 +40,7 @@ class RegisterController extends Controller
                 'data'      => $user,
             ], 201);
         } catch (\Throwable $th) {
+            DB::rollBack();
             return response()->json([
                 'code'    => 500,
                 'status'  => false,

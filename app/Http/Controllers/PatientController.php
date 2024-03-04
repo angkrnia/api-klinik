@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Patient\StorePatientRequest;
 use App\Http\Requests\Patient\UpdatePatientRequest;
 use App\Models\Patient;
-use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +18,7 @@ class PatientController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role === 'admin') {
+        if ($user->role === ADMIN) {
             $request = $request->query();
             $query = Patient::query();
 
@@ -32,12 +31,12 @@ class PatientController extends Controller
 
             if (isset($request['limit']) || isset($request['page'])) {
                 $limit = $request['limit'] ?? 10;
-                $result = $query->with('user')->paginate($limit);
+                $result = $query->with(USER)->paginate($limit);
             } else {
-                $result = $query->with('user')->get(); // Untuk Print atau Download
+                $result = $query->with(USER)->get(); // Untuk Print atau Download
             }
         } else {
-            $result = Patient::with('user')->where('user_id', $user->id)->first();
+            $result = Patient::with(USER)->where('user_id', $user->id)->first();
         }
 
         return response()->json([

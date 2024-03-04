@@ -25,11 +25,10 @@ class DoctorRequest extends FormRequest
             'fullname'     => ['required', 'string', 'max:255'],
             'phone'        => ['required', 'string', 'max:20'],
             'description'  => ['nullable', 'string', 'max:255'],
-            'user_id'      => ['nullable', 'exists:users,id'],
-            'schedule'     => ['nullable', 'array'],
-            'schedule.*.day'    => ['required', 'string'],
-            'schedule.*.start'  => ['required', 'string'],
-            'schedule.*.end'    => ['required', 'string'],
+            'start_day'    => ['required', 'string', 'lowercase', 'max:20'],
+            'end_day'      => ['required', 'string', 'lowercase', 'max:20'],
+            'start_time'   => ['required', 'string', 'max:20'],
+            'end_time'     => ['required', 'string', 'max:20'],
         ];
     }
 }

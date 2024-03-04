@@ -31,11 +31,11 @@ class QueueController extends Controller
         }
 
         if (!isset($request['data']) && @$request['data'] !== 'all') {
-            if ($user->role === 'pasien' || $user->role === 'patient') {
+            if ($user->role === PASIEN) {
                 $antrianSaya = Queue::where('patient_id', $user->patient->id)->whereDate('created_at', $currentDate)->whereStatus('waiting')->value('queue');
                 $query->where('patient_id', $user->patient->id);
-            } elseif ($user->role === 'doctor' || $user->role === 'dokter') {
-                $query->whereHas('doctor', function ($q) use ($user) {
+            } elseif ($user->role === DOKTER) {
+                $query->whereHas(DOKTER, function ($q) use ($user) {
                     $q->where('user_id', $user->doctor->id);
                 });
             }
@@ -51,7 +51,7 @@ class QueueController extends Controller
             $query->whereStatus($status);
         }
 
-        if($user->role === 'dokter') {
+        if($user->role === DOKTER) {
             $query->orderBy('created_at', 'asc');
         } else {
             $query->orderBy('created_at', 'desc');
@@ -60,9 +60,9 @@ class QueueController extends Controller
 
         if (isset($request['limit']) || isset($request['page'])) {
             $limit = $request['limit'] ?? 10;
-            $result = $query->with(['patient', 'doctor', 'history'])->paginate($limit);
+            $result = $query->with([PASIEN, DOKTER, HISTORY])->paginate($limit);
         } else {
-            $result = $query->with(['patient', 'doctor', 'history'])->get(); // Untuk Print atau Download
+            $result = $query->with([PASIEN, DOKTER, HISTORY])->get(); // Untuk Print atau Download
         }
 
         // Menghitung jumlah antrian pada hari ini
@@ -90,7 +90,7 @@ class QueueController extends Controller
         $queueCount = Queue::whereDate('created_at', $currentDate)->count();
         $currentAntrian = Queue::where('status', 'on process')->whereDate('created_at', $currentDate)->value('queue');
         
-        if ($user->role == 'admin' || $user->role == 'dokter') {
+        if ($user->role == ADMIN || $user->role == DOKTER) {
             $sisaAntrian = Queue::where('status', 'waiting')->whereDate('created_at', $currentDate)->count();
 
             return response()->json([
@@ -130,7 +130,7 @@ class QueueController extends Controller
      */
     public function create()
     {
-        //
+        abort(404);
     }
 
     /**
@@ -162,10 +162,15 @@ class QueueController extends Controller
                 $newQueueNumber = 1;
             }
 
+            // CARI DOKTER YANG SEDANG BERTUGAS
+            $query = "SELECT id, fullname FROM doctors WHERE DAYNAME(NOW()) BETWEEN start_day AND end_day AND TIME(NOW()) BETWEEN start_time AND end_time LIMIT 1";
+
+            $doctor = DB::select($query);
+            
             $queue = Queue::create([
                 'queue' => $newQueueNumber,
                 'patient_id' => $request->input('patient_id'),
-                'doctor_id' => $request->input('doctor_id'),
+                'doctor_id' => $doctor[0]->id ?? 2,
             ]);
 
             $queue->history()->create([
@@ -177,7 +182,7 @@ class QueueController extends Controller
             return response()->json([
                 'code'      => 200,
                 'status'    => true,
-                'message'   => 'Antrian baru berhasil ditambahkankan.',
+                'message'   => 'Antrian baru berhasil ditambahkan.',
                 'data'      => $queue
             ]);
         } catch (\Throwable $th) {

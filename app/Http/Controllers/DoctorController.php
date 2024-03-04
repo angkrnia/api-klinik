@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Doctor\DoctorRequest;
 use App\Models\Doctor;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DoctorController extends Controller
@@ -29,9 +29,9 @@ class DoctorController extends Controller
 
         if (isset($request['limit']) || isset($request['page'])) {
             $limit = $request['limit'] ?? 10;
-            $result = $query->with(['user', 'schedules'])->paginate($limit);
+            $result = $query->with([USER])->paginate($limit);
         } else {
-            $result = $query->with(['user', 'schedules'])->get(); // Untuk Print atau Download
+            $result = $query->with([USER])->get(); // Untuk Print atau Download
         }
 
         return response()->json([
@@ -46,7 +46,7 @@ class DoctorController extends Controller
      */
     public function create()
     {
-        //
+        abort(404);
     }
 
     /**
@@ -58,27 +58,23 @@ class DoctorController extends Controller
             DB::beginTransaction();
 
             // Membuat dokter baru
-            $doctor = Doctor::create($request->validated());
+            $user = User::create([
+                'email'         => $request->email,
+                'role'          => DOKTER,
+                'password'      => $request->password,
+                'email_verified_at' => Carbon::now()
+            ]);
 
-            // Menyimpan jadwal
-            if (isset($request->schedule) && is_array($request->schedule)) {
-                foreach ($request->schedule as $schedule) {
-                    $doctor->schedules()->create([
-                        'day'   => $schedule['day'],
-                        'start' => Carbon::parse($schedule['start'])->format('H:i:s'),
-                        'end'   => Carbon::parse($schedule['end'])->format('H:i:s'),
-                    ]);
-                }
-            }
+            // Membuat user baru
+            $doctor = $user->doctor()->create($request->validated());
 
             DB::commit();
 
             return response()->json([
-                'code'      => 200,
+                'code'      => 201,
                 'status'    => true,
                 'message'   => 'Dokter baru berhasil ditambahkan.',
-                'data'      => $doctor
-            ]);
+            ], 201);
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json([
@@ -116,7 +112,7 @@ class DoctorController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        abort(404);
     }
 
     /**
