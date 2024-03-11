@@ -15,6 +15,10 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('patient_id');
             $table->unsignedBigInteger('queue_id');
+            $table->string('blood_pressure')->default('120/80');
+            $table->decimal('height', 5, 2)->nullable();
+            $table->decimal('weight', 5, 2)->nullable();
+            $table->decimal('temperature', 5, 2)->default(36);
             $table->string('complaint')->nullable();
             $table->string('diagnosa')->nullable();
             $table->string('saran')->nullable();

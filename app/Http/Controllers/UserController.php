@@ -20,7 +20,7 @@ class UserController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role === 'admin') {
+        if ($user->role === ADMIN) {
             $request = $request->query();
             $query = User::query();
 
@@ -37,9 +37,9 @@ class UserController extends Controller
             } else {
                 $result = $query->get(); // Untuk Print atau Download
             }
-        } else if($user->role === 'dokter') {
-            $result = User::with('doctor.schedules')->where('id', $user->id)->first();
-        } else if($user->role === 'patient' || $user->role === 'pasien') {
+        } else if($user->role === DOKTER) {
+            $result = User::with(DOKTER)->where('id', $user->id)->first();
+        } else if($user->role === PASIEN) {
             $result = User::with('patient.history')->where('id', $user->id)->first();
         }
 
@@ -66,9 +66,9 @@ class UserController extends Controller
         try {
             $pasien = User::findOrFail($id);
 
-            if ($pasien->role === 'dokter') {
+            if ($pasien->role === DOKTER) {
                 $pasien->load('doctor');
-            } else if ($pasien->role === 'pasien') {
+            } else if ($pasien->role === PASIEN) {
                 $pasien->load('patient');
             }
 
@@ -105,7 +105,7 @@ class UserController extends Controller
         DB::beginTransaction();
         try {
             $auth = auth()->user();
-            if ($auth->role !== 'admin' && $auth->id !== $user->id) {
+            if ($auth->role !== ADMIN && $auth->id !== $user->id) {
                 return response()->json([
                     'code'      => 403,
                     'status'    => true,
@@ -115,7 +115,7 @@ class UserController extends Controller
 
             $user->update($request->all());
 
-            if($user->role === 'pasien') {
+            if($user->role === PASIEN) {
                 // UPDATE DATA PASIEN
                 $patient = Patient::where('user_id', $user->id)->first();
                 if ($patient) {
@@ -154,7 +154,7 @@ class UserController extends Controller
                         'message' => 'Data pasien tidak ditemukan.',
                     ], 404);
                 }
-            } else if($user->role === 'dokter') {
+            } else if($user->role === DOKTER) {
                 // UPDATE DATA DOKTER
                 $doctor = Doctor::where('user_id', $user->id)->first();
                 if ($doctor) {

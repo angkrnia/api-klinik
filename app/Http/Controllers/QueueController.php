@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AntrianEvent;
 use App\Http\Requests\Queue\QueueRequest;
 use App\Models\Doctor;
 use App\Models\Queue;
@@ -51,7 +52,7 @@ class QueueController extends Controller
             $query->whereStatus($status);
         }
 
-        if($user->role === DOKTER) {
+        if ($user->role === DOKTER) {
             $query->orderBy('created_at', 'asc');
         } else {
             $query->orderBy('created_at', 'desc');
@@ -85,11 +86,11 @@ class QueueController extends Controller
     {
         $user = Auth::user();
         $currentDate = Carbon::now()->toDateString();
-        
+
         // Menghitung jumlah antrian pada hari ini
         $queueCount = Queue::whereDate('created_at', $currentDate)->count();
         $currentAntrian = Queue::where('status', 'on process')->whereDate('created_at', $currentDate)->value('queue');
-        
+
         if ($user->role == ADMIN || $user->role == DOKTER) {
             $sisaAntrian = Queue::where('status', 'waiting')->whereDate('created_at', $currentDate)->count();
 
@@ -105,12 +106,12 @@ class QueueController extends Controller
         } else {
             $antrianSaya = Queue::where('patient_id', $user->patient->id)->whereDate('created_at', $currentDate)->whereStatus('waiting')->value('queue');
             $sisaAntrian = Queue::where('status', 'waiting')
-            ->whereDate('created_at', $currentDate)
-            ->where('queue', $antrianSaya)
-            ->value('queue') - 
-            Queue::where('status', 'waiting')
-            ->whereDate('created_at', $currentDate)
-            ->min('queue');
+                ->whereDate('created_at', $currentDate)
+                ->where('queue', $antrianSaya)
+                ->value('queue') -
+                Queue::where('status', 'waiting')
+                ->whereDate('created_at', $currentDate)
+                ->min('queue');
 
             return response()->json([
                 'code'      => 200,
@@ -152,7 +153,7 @@ class QueueController extends Controller
                 return response()->json(['message' => 'Anda masih memiliki antrian yang sedang ditunggu. Tidak bisa membuat antrian baru'], 422);
             }
 
-            $lastQueue = Queue::whereDate('created_at', $currentDate)
+            $lastQueue = Queue::latest()
                 ->orderByDesc('queue')
                 ->first();
 
@@ -163,10 +164,26 @@ class QueueController extends Controller
             }
 
             // CARI DOKTER YANG SEDANG BERTUGAS
-            $query = "SELECT id, fullname FROM doctors WHERE DAYNAME(NOW()) BETWEEN start_day AND end_day AND TIME(NOW()) BETWEEN start_time AND end_time LIMIT 1";
+            // $query = "SELECT id, fullname FROM doctors WHERE DAYNAME(NOW()) BETWEEN start_day AND end_day AND TIME(NOW()) BETWEEN start_time AND end_time LIMIT 1";
 
-            $doctor = DB::select($query);
-            
+            $query = "SELECT id, fullname
+            FROM doctors
+            WHERE 
+                DAYOFWEEK(NOW()) BETWEEN 
+                    FIELD(LOWER(start_day), ?, ?, ?, ?, ?, ?, ?) AND 
+                    FIELD(LOWER(end_day), ?, ?, ?, ?, ?, ?, ?)
+                AND
+                (
+                    (start_time < end_time AND TIME(NOW()) BETWEEN start_time AND end_time)
+                    OR
+                    (start_time > end_time AND (TIME(NOW()) >= start_time OR TIME(NOW()) <= end_time))
+                )";
+
+            $days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            $params = [...$days, ...$days];
+
+            $doctor = DB::select($query, $params);
+
             $queue = Queue::create([
                 'queue' => $newQueueNumber,
                 'patient_id' => $request->input('patient_id'),
@@ -177,6 +194,9 @@ class QueueController extends Controller
                 'complaint' => $request->input('complaint'),
                 'patient_id' => $request->input('patient_id'),
             ]);
+
+            // events
+            AntrianEvent::dispatch("success");
 
             DB::commit();
             return response()->json([
@@ -245,6 +265,9 @@ class QueueController extends Controller
             $soundUrl = asset('assets/voice-announcement/selanjutnya.mp3');
         }
 
+        // events
+        AntrianEvent::dispatch("success");
+
         return response()->json([
             'code'      => 200,
             'status'    => true,
@@ -288,6 +311,9 @@ class QueueController extends Controller
                 ]
             );
 
+            // events
+            AntrianEvent::dispatch("success");
+
             return response()->json([
                 'code' => 200,
                 'status' => true,
@@ -311,6 +337,9 @@ class QueueController extends Controller
             $queue->update([
                 'status' => Queue::BATAL
             ]);
+
+            // events
+            AntrianEvent::dispatch("success");
 
             return response()->json([
                 'code' => 200,

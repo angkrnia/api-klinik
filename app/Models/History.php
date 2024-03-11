@@ -13,6 +13,10 @@ class History extends Model
     protected $fillable = [
         'patient_id',
         'queue_id',
+        'blood_pressure',
+        'height',
+        'weight',
+        'temperature',
         'complaint',
         'diagnosa',
         'saran',
