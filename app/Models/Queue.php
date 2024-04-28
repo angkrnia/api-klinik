@@ -18,6 +18,7 @@ class Queue extends Model
         'patient_id',
         'doctor_id',
         'status',
+        'is_last_queue',
     ];
 
     public function history()

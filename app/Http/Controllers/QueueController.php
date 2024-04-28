@@ -153,15 +153,11 @@ class QueueController extends Controller
                 return response()->json(['message' => 'Anda masih memiliki antrian yang sedang ditunggu. Tidak bisa membuat antrian baru'], 422);
             }
 
-            $lastQueue = Queue::latest()
-                ->orderByDesc('queue')
-                ->first();
-
-            if ($lastQueue) {
-                $newQueueNumber = $lastQueue->queue + 1;
-            } else {
-                $newQueueNumber = 1;
-            }
+            // $lastQueue = Queue::whereDate('created_at', $currentDate)
+            // ->orderByDesc('queue')
+            // ->first();
+            $lastQueue = Queue::latest()->first();
+            $newQueueNumber = $lastQueue ? ($lastQueue->is_last_queue ? 1 : $lastQueue->queue + 1) : 1;
 
             // CARI DOKTER YANG SEDANG BERTUGAS
             // $query = "SELECT id, fullname FROM doctors WHERE DAYNAME(NOW()) BETWEEN start_day AND end_day AND TIME(NOW()) BETWEEN start_time AND end_time LIMIT 1";
@@ -352,6 +348,15 @@ class QueueController extends Controller
             } else {
                 return response()->json(['error' => $th->getMessage()], 500);
             }
+        }
+    }
+
+    public function resetAntrian()
+    {
+        $latestQueue = Queue::latest()->first();
+        if ($latestQueue) {
+            $latestQueue->update(['is_last_queue' => true]);
+            return response()->json(['message' => 'Antrian berhasil direset']);
         }
     }
 }

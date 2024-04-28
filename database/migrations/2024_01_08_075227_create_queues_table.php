@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('patient_id');
             $table->unsignedBigInteger('doctor_id');
             $table->string('status')->default('waiting');
+            $table->boolean('is_last_queue')->default(false);
             $table->timestamps();
 
             $table->foreign('patient_id')->on('patients')->references('id')->onDelete('cascade');

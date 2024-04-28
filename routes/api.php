@@ -29,12 +29,14 @@ Route::middleware(['auth:api'])->group(function () {
 		Route::post('facilities', [\App\Http\Controllers\FacilityController::class, 'store']);
 		Route::put('facilities/{facility}', [\App\Http\Controllers\FacilityController::class, 'update']);
 		Route::delete('facilities/{facility}', [\App\Http\Controllers\FacilityController::class, 'destroy']);
+		Route::post('reset-antrian', [App\Http\Controllers\QueueController::class, 'resetAntrian']);
 	});
 
 	// ROUTE DOKTER
 	Route::middleware(['doctor'])->group(function () {
 		Route::put('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'update']);
 		Route::put('queue/{queue}', [App\Http\Controllers\QueueController::class, 'update']);
+		Route::post('reset-antrian', [App\Http\Controllers\QueueController::class, 'resetAntrian']);
 	});
 
 	// ROUTE
