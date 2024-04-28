@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\AntrianEvent;
 use App\Http\Requests\Queue\QueueRequest;
+use App\Http\Requests\Queue\VitalSignRequest;
 use App\Models\Doctor;
 use App\Models\Queue;
 use Carbon\Carbon;
@@ -238,7 +239,7 @@ class QueueController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        abort(403);
     }
 
     /**
@@ -246,8 +247,10 @@ class QueueController extends Controller
      */
     public function update(Request $request, Queue $queue)
     {
+        $doctor = auth()->user()->doctor;
         $queue->update([
-            'status' => $request->status
+            'status' => $request->status,
+            'doctor_id' => $doctor->id
         ]);
 
         $soundPath = public_path('assets/voice-announcement/' . $queue->queue . '.mp3');
@@ -262,7 +265,7 @@ class QueueController extends Controller
         }
 
         // events
-        AntrianEvent::dispatch("success");
+        AntrianEvent::dispatch("$queue->queue|$soundUrl|$doctor->fullname");
 
         return response()->json([
             'code'      => 200,
