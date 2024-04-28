@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Events\AntrianEvent;
 use App\Http\Requests\Queue\QueueRequest;
-use App\Http\Requests\Queue\VitalSignRequest;
-use App\Models\Doctor;
 use App\Models\Queue;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -13,7 +11,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
 
 class QueueController extends Controller
 {
@@ -58,7 +55,6 @@ class QueueController extends Controller
         } else {
             $query->orderBy('created_at', 'desc');
         }
-
 
         if (isset($request['limit']) || isset($request['page'])) {
             $limit = $request['limit'] ?? 10;
@@ -127,6 +123,22 @@ class QueueController extends Controller
         }
     }
 
+    public function publicAntrian()
+    {
+        $currentDate = Carbon::now()->toDateString();
+        $queueCount = Queue::whereDate('created_at', $currentDate)->count();
+        $currentAntrian = Queue::where('status', 'on process')->whereDate('created_at', $currentDate)->value('queue');
+        return response()->json([
+            'code'      => 200,
+            'status'    => true,
+            'message'    => 'Sukses',
+            'data' => [
+                'antrian_hari_ini' => $queueCount,
+                'antrian_saat_ini' => $currentAntrian,
+            ]
+        ]);
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -191,9 +203,6 @@ class QueueController extends Controller
                 'complaint' => $request->input('complaint'),
                 'patient_id' => $request->input('patient_id'),
             ]);
-
-            // events
-            AntrianEvent::dispatch("success");
 
             DB::commit();
             return response()->json([
@@ -310,9 +319,6 @@ class QueueController extends Controller
                 ]
             );
 
-            // events
-            AntrianEvent::dispatch("success");
-
             return response()->json([
                 'code' => 200,
                 'status' => true,
@@ -336,9 +342,6 @@ class QueueController extends Controller
             $queue->update([
                 'status' => Queue::BATAL
             ]);
-
-            // events
-            AntrianEvent::dispatch("success");
 
             return response()->json([
                 'code' => 200,

@@ -7,6 +7,7 @@ Route::put('refresh-token', [App\Http\Controllers\Auth\LoginController::class, '
 Route::post('register', App\Http\Controllers\Auth\RegisterController::class);
 Route::post('forgot-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'forgotPassword']);
 Route::post('reset-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'resetPassword']);
+Route::get('public/check-antrian', [App\Http\Controllers\QueueController::class, 'publicAntrian']);
 
 Route::middleware(['auth:api'])->group(function () {
 
