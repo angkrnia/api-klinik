@@ -20,6 +20,7 @@ class User extends Authenticatable implements JWTSubject
      * @var array<int, string>
      */
     protected $fillable = [
+        'fullname',
         'email',
         'password',
         'role',
@@ -66,6 +67,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return [
             'id'        => $this->id,
+            'fullname'  => $this->fullname,
             'email'     => $this->email,
             'role'      => $this->role
         ];
@@ -78,6 +80,6 @@ class User extends Authenticatable implements JWTSubject
 
     public function patient()
     {
-        return $this->hasOne(Patient::class);
+        return $this->hasMany(Patient::class);
     }
 }

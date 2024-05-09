@@ -110,4 +110,22 @@ class PatientController extends Controller
             'message'   => 'Pasien berhasil dihapus.',
         ]);
     }
+
+    /**
+     * Get All Patient
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Throwable
+     * 
+    */
+    public function patientListByUser(Request $request)
+    {
+        $userId = auth()->user()->id;
+        $patients = Patient::where('user_id', $userId)->get();
+        return response()->json([
+            'code'      => 200,
+            'status'    => true,
+            'data'      => $patients
+        ]);
+    }
 }

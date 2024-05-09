@@ -24,6 +24,7 @@ class DoctorRequest extends FormRequest
         return [
             'fullname'     => ['required', 'string', 'max:255'],
             'phone'        => ['required', 'string', 'max:20'],
+            'avatar'       => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp'],
             'description'  => ['nullable', 'string', 'max:255'],
             'start_day'    => ['required', 'string', 'lowercase', 'max:20'],
             'end_day'      => ['required', 'string', 'lowercase', 'max:20'],

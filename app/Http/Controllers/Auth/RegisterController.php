@@ -26,10 +26,11 @@ class RegisterController extends Controller
         try {
             $user = User::create($request->all());
 
-            Patient::create([
-                'user_id' => $user->id,
-                'fullname' => $request->fullname,
-            ]);
+            // Patient::create([
+            //     'user_id' => $user->id,
+            //     'fullname' => $request->fullname,
+            //     'nama_keluarga' => $request->nama_keluarga,
+            // ]);
 
             DB::commit();
     

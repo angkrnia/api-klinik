@@ -18,5 +18,15 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
+        \App\Models\User::create([
+            'email' => 'dr.friska@gmail.com',
+            'password' => bcrypt('123456'),
+            'role' => DOKTER,
+        ]);
+        // \App\Models\User::create([
+        //     'email' => 'anggakurnia712@gmail.com',
+        //     'password' => bcrypt('angga9980'),
+        //     'role' => ADMIN,
+        // ]);
     }
 }

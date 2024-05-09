@@ -11,8 +11,10 @@ Route::get('public/check-antrian', [App\Http\Controllers\QueueController::class,
 
 Route::middleware(['auth:api'])->group(function () {
 
+	Route::get('patient-list-by-user', [App\Http\Controllers\PatientController::class, 'patientListByUser']);
 	Route::apiResource('patients', App\Http\Controllers\PatientController::class)->except(['destroy']);
 	Route::get('doctors', [App\Http\Controllers\DoctorController::class, 'index']);
+	Route::put('queue/{queue}/vital-sign', [App\Http\Controllers\QueueController::class, 'vitalSign']);
 	Route::get('queue', [App\Http\Controllers\QueueController::class, 'index']);
 	Route::get('queue/check-antrian', [App\Http\Controllers\QueueController::class, 'checkAntrian']);
 	Route::post('queue', [App\Http\Controllers\QueueController::class, 'store']);

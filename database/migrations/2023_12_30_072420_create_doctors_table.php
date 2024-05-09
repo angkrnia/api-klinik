@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('fullname');
             $table->string('phone');
+            $table->string('avatar')->nullable();
             $table->text('description')->nullable();
             $table->string('start_day', 10);
             $table->string('end_day', 10);

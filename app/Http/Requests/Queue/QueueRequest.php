@@ -23,6 +23,10 @@ class QueueRequest extends FormRequest
     {
         return [
             "complaint" =>  ['required', 'string', 'max:255'],
+            "blood_pressure" =>  ['nullable', 'string', 'max:255'],
+            "height" =>  ['nullable'],
+            "weight" =>  ['nullable'],
+            "temperature" =>  ['nullable'],
             "status" =>  ['nullable', 'string', 'max:255'],
         ];
     }

@@ -57,16 +57,32 @@ class DoctorController extends Controller
         try {
             DB::beginTransaction();
 
+            $imageFile = $request->file('image');
+            $imageName = date('md_His') . '_' . $imageFile->getClientOriginalName();
+            $imagePath = $imageFile->move(public_path('doctors'), $imageName);
+            $imageUrl = url('doctors/' . $imageName);
+
             // Membuat dokter baru
             $user = User::create([
+                'fullname'      => $request->fullname,
                 'email'         => $request->email,
                 'role'          => DOKTER,
-                'password'      => $request->password,
+                'password'      => bcrypt($request->password),
                 'email_verified_at' => Carbon::now()
             ]);
 
             // Membuat user baru
-            $doctor = $user->doctor()->create($request->validated());
+            $doctor = $user->doctor()->create([
+                'fullname' => $request->fullname,
+                'phone' => $request->phone,
+                'avatar' => $imageUrl,
+                'description' => $request->description,
+                'start_day' => $request->start_day,
+                'end_day' => $request->end_day,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'user_id' => $request->user_id,
+            ]);
 
             DB::commit();
 

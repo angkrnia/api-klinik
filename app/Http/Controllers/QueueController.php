@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class QueueController extends Controller
 {
@@ -20,6 +21,7 @@ class QueueController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        $patientIds = $user->patient->pluck('id')->toArray();
         $request = $request->query();
         $query = Queue::query();
         $currentDate = Carbon::now()->toDateString();
@@ -31,8 +33,14 @@ class QueueController extends Controller
 
         if (!isset($request['data']) && @$request['data'] !== 'all') {
             if ($user->role === PASIEN) {
-                $antrianSaya = Queue::where('patient_id', $user->patient->id)->whereDate('created_at', $currentDate)->whereStatus('waiting')->value('queue');
-                $query->where('patient_id', $user->patient->id);
+                $antrianSaya = Queue::whereIn('patient_id', $patientIds)
+                ->whereDate('created_at', $currentDate)
+                ->where(function ($query) {
+                    $query->where('status', 'waiting')
+                    ->orWhere('status', 'on waiting');
+                })
+                ->value('queue');
+                $query->whereIn('patient_id', $patientIds);
             } elseif ($user->role === DOKTER) {
                 $query->whereHas(DOKTER, function ($q) use ($user) {
                     $q->where('user_id', $user->doctor->id);
@@ -159,6 +167,7 @@ class QueueController extends Controller
 
             $existingWaitingQueue = Queue::whereDate('created_at', $currentDate)
                 ->where('status', 'waiting')
+                ->orWhere('status', 'on waiting')
                 ->where('patient_id', $patientId)
                 ->first();
 
@@ -193,14 +202,21 @@ class QueueController extends Controller
 
             $doctor = DB::select($query, $params);
 
+            $status = empty($request->input('height')) || empty($request->input('weight')) || empty($request->input('temperature')) ? 'on waiting' : 'waiting';
+
             $queue = Queue::create([
+                'status' => $status,
                 'queue' => $newQueueNumber,
                 'patient_id' => $request->input('patient_id'),
-                'doctor_id' => $doctor[0]->id ?? 2,
+                'doctor_id' => $doctor[0]->id ?? 1,
             ]);
 
             $queue->history()->create([
                 'complaint' => $request->input('complaint'),
+                'blood_pressure' => $request->input('blood_pressure'),
+                'height' => $request->input('height'),
+                'weight' => $request->input('weight'),
+                'temperature' => $request->input('temperature'),
                 'patient_id' => $request->input('patient_id'),
             ]);
 
@@ -363,6 +379,41 @@ class QueueController extends Controller
         if ($latestQueue) {
             $latestQueue->update(['is_last_queue' => true]);
             return response()->json(['message' => 'Antrian berhasil direset']);
+        }
+    }
+
+    public function vitalSign(Request $request, Queue $queue)
+    {
+        $request->validate([
+            'blood_pressure' => ['required', 'string', 'max:255'],
+            'height' => ['required', 'string', 'max:255'],
+            'weight' => ['required', 'string', 'max:255'],
+            'temperature' => ['required', 'string', 'max:255'],
+        ]);
+
+        try {
+            $queue->update([
+                'status' => 'waiting'
+            ]);
+
+            $queue->history()->update([
+                'blood_pressure' => $request->blood_pressure,
+                'height' => $request->height,
+                'weight' => $request->weight,
+                'temperature' => $request->temperature,
+            ]);
+
+            return response()->json([
+                'code' => 200,
+                'status' => true,
+                'message' => 'Antrian berhasil diupdate.',
+            ]);
+        } catch (\Throwable $th) {
+            if ($th instanceof ModelNotFoundException) {
+                return response()->json(['error' => 'Antrian tidak ditemukan'], 404);
+            } else {
+                return response()->json(['error' => $th->getMessage()], 500);
+            }
         }
     }
 }

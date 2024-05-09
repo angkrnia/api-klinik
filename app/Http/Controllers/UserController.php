@@ -16,32 +16,9 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $user = Auth::user();
-
-        if ($user->role === ADMIN) {
-            $request = $request->query();
-            $query = User::query();
-
-            if (isset($request['search'])) {
-                $searchKeyword = $request['search'];
-                $query->keywordSearch($searchKeyword);
-            }
-
-            $query->orderBy('created_at', 'desc');
-
-            if (isset($request['limit']) || isset($request['page'])) {
-                $limit = $request['limit'] ?? 10;
-                $result = $query->paginate($limit);
-            } else {
-                $result = $query->get(); // Untuk Print atau Download
-            }
-        } else if($user->role === DOKTER) {
-            $result = User::with(DOKTER)->where('id', $user->id)->first();
-        } else if($user->role === PASIEN) {
-            $result = User::with('patient.history')->where('id', $user->id)->first();
-        }
+        $result = User::findOrFail(auth()->user()->id);
 
         return response()->json([
             'code'      => 200,
@@ -63,27 +40,7 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        try {
-            $pasien = User::findOrFail($id);
-
-            if ($pasien->role === DOKTER) {
-                $pasien->load('doctor');
-            } else if ($pasien->role === PASIEN) {
-                $pasien->load('patient');
-            }
-
-            return response()->json([
-                'code'   => 200,
-                'status' => true,
-                'data'   => $pasien
-            ]);
-        } catch (\Throwable $th) {
-            if ($th instanceof ModelNotFoundException) {
-                return response()->json(['error' => 'User tidak ditemukan'], 404);
-            } else {
-                return response()->json(['error' => $th->getMessage()], 500);
-            }
-        }
+        abort(404);
     }
 
     /**
@@ -93,13 +50,13 @@ class UserController extends Controller
     {
         $request->validate([
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'record_no' => ['nullable', 'string', 'max:255'],
+            // 'record_no' => ['nullable', 'string', 'max:255'],
             'fullname' => ['required', 'string', 'max:255'],
-            'gender' => ['nullable', 'string', 'max:12'],
-            'birthday' => ['nullable', 'string', 'max:15'],
-            'age' => ['nullable', 'integer'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'address' => ['nullable', 'string', 'max:255'],
+            // 'gender' => ['nullable', 'string', 'max:12'],
+            // 'birthday' => ['nullable', 'string', 'max:15'],
+            // 'age' => ['nullable', 'integer'],
+            // 'phone' => ['nullable', 'string', 'max:20'],
+            // 'address' => ['nullable', 'string', 'max:255'],
         ]);
 
         DB::beginTransaction();
@@ -114,71 +71,6 @@ class UserController extends Controller
             }
 
             $user->update($request->all());
-
-            if($user->role === PASIEN) {
-                // UPDATE DATA PASIEN
-                $patient = Patient::where('user_id', $user->id)->first();
-                if ($patient) {
-                    $updateData = [];
-    
-                    if ($request->filled('fullname')) {
-                        $updateData['fullname'] = $request->fullname;
-                    }
-                    if ($request->filled('record_no')) {
-                        $updateData['record_no'] = $request->record_no;
-                    }
-                    if ($request->filled('gender')) {
-                        $updateData['gender'] = $request->gender;
-                    }
-                    if ($request->filled('birthday')) {
-                        $updateData['birthday'] = $request->birthday;
-                    }
-                    if ($request->filled('age')) {
-                        $updateData['age'] = $request->age;
-                    }
-                    if ($request->filled('phone')) {
-                        $updateData['phone'] = $request->phone;
-                    }
-                    if ($request->filled('address')) {
-                        $updateData['address'] = $request->address;
-                    }
-    
-                    if (!empty($updateData)) {
-                        $patient->update($updateData);
-                    }
-                } else {
-                    DB::rollBack();
-                    return response()->json([
-                        'code' => 404,
-                        'status' => false,
-                        'message' => 'Data pasien tidak ditemukan.',
-                    ], 404);
-                }
-            } else if($user->role === DOKTER) {
-                // UPDATE DATA DOKTER
-                $doctor = Doctor::where('user_id', $user->id)->first();
-                if ($doctor) {
-                    $updateData = [];
-
-                    if ($request->filled('fullname')) {
-                        $updateData['fullname'] = $request->fullname;
-                    }
-                    if ($request->filled('phone')) {
-                        $updateData['phone'] = $request->phone;
-                    }
-
-                    if (!empty($updateData)) {
-                        $doctor->update($updateData);
-                    }
-                } else {
-                    DB::rollBack();
-                    return response()->json([
-                        'code' => 404,
-                        'status' => false,
-                        'message' => 'Data Dokter tidak ditemukan.',
-                    ], 404);
-                }
-            }
 
             DB::commit();
             return response()->json([

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('record_no', 50)->nullable()->unique();
             $table->string('fullname');
             $table->string('gender', 20)->nullable();
-            $table->integer('no_ktp', 17)->nullable();
+            $table->string('no_ktp', 16)->nullable();
             $table->string('nama_keluarga');
             $table->date('birthday')->nullable();
             $table->integer('age')->nullable();
