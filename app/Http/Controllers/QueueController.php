@@ -25,6 +25,7 @@ class QueueController extends Controller
         $request = $request->query();
         $query = Queue::query();
         $currentDate = Carbon::now()->toDateString();
+        $yesterday = Carbon::yesterday()->toDateString();
 
         if (isset($request['search'])) {
             $searchKeyword = $request['search'];
@@ -50,7 +51,7 @@ class QueueController extends Controller
 
         if (isset($request['date']) && !empty($request['date'])) {
             $date = $request['date'];
-            $query->whereDate('created_at', $date);
+            $query->whereDate('created_at', $date)->orWhereDate('created_at', $yesterday);
         }
 
         if (isset($request['status']) && !empty($request['status'])) {
@@ -73,7 +74,7 @@ class QueueController extends Controller
 
         // Menghitung jumlah antrian pada hari ini
         $queueCount = Queue::whereDate('created_at', $currentDate)->count();
-        $sisaAntrian = Queue::where('status', 'waiting')->whereDate('created_at', $currentDate)->count();
+        $sisaAntrian = Queue::whereIn('status', ['waiting', 'on waiting'])->whereDate('created_at', $currentDate)->count();
         $currentAntrian = Queue::where('status', 'on process')->whereDate('created_at', $currentDate)->value('queue');
 
         return response()->json([
@@ -96,7 +97,7 @@ class QueueController extends Controller
         $queueCount = Queue::whereDate('created_at', $currentDate)->count();
         $currentAntrian = Queue::where('status', 'on process')->whereDate('created_at', $currentDate)->value('queue');
 
-        if ($user->role == ADMIN || $user->role == DOKTER) {
+        if ($user->role == ADMIN || $user->role == DOKTER || $user->role == PERAWAT) {
             $sisaAntrian = Queue::where('status', 'waiting')->whereDate('created_at', $currentDate)->count();
 
             return response()->json([
@@ -109,14 +110,22 @@ class QueueController extends Controller
                 ]
             ]);
         } else {
-            $antrianSaya = Queue::where('patient_id', $user->patient->id)->whereDate('created_at', $currentDate)->whereStatus('waiting')->value('queue');
-            $sisaAntrian = Queue::where('status', 'waiting')
+            $patientIds = $user->patient->pluck('id')->toArray();
+            $antrianSaya = Queue::whereIn('patient_id', $patientIds)->whereDate('created_at', $currentDate)->where(function ($query) {
+                $query->where('status', 'waiting')
+                    ->orWhere('status', 'on waiting');
+            })->value('queue');
+            $sisaAntrian = Queue::whereIn('status', ['waiting', 'on waiting'])
                 ->whereDate('created_at', $currentDate)
                 ->where('queue', $antrianSaya)
                 ->value('queue') -
-                Queue::where('status', 'waiting')
+                Queue::whereIn('status', ['waiting'])
                 ->whereDate('created_at', $currentDate)
                 ->min('queue');
+            $antrian = Queue::with([DOKTER, PASIEN])->whereIn('patient_id', $patientIds)->whereDate('created_at', $currentDate)->where(function ($query) {
+                $query->where('status', 'waiting')
+                    ->orWhere('status', 'on waiting');
+            })->get();
 
             return response()->json([
                 'code'      => 200,
@@ -126,6 +135,7 @@ class QueueController extends Controller
                     'antrian_saat_ini' => $currentAntrian,
                     'antrian_saya'     => $antrianSaya,
                     'sisa_antrian'     => (int) $sisaAntrian + 1,
+                    'antrian'          => $antrian
                 ]
             ]);
         }
@@ -389,6 +399,7 @@ class QueueController extends Controller
             'height' => ['required', 'string', 'max:255'],
             'weight' => ['required', 'string', 'max:255'],
             'temperature' => ['required', 'string', 'max:255'],
+            'complaint' => ['required', 'string', 'max:255'],
         ]);
 
         try {
@@ -401,6 +412,7 @@ class QueueController extends Controller
                 'height' => $request->height,
                 'weight' => $request->weight,
                 'temperature' => $request->temperature,
+                'complaint' => $request->complaint,
             ]);
 
             return response()->json([

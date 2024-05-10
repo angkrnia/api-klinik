@@ -23,6 +23,7 @@ class QueueRequest extends FormRequest
     {
         return [
             "complaint" =>  ['required', 'string', 'max:255'],
+            "patient_id" =>  ['required', 'exists:patients,id'],
             "blood_pressure" =>  ['nullable', 'string', 'max:255'],
             "height" =>  ['nullable'],
             "weight" =>  ['nullable'],
@@ -38,6 +39,7 @@ class QueueRequest extends FormRequest
     {
         return [
             'complaint.required' => 'Form keluhan wajib diisi!',
+            'patient_id.required' => 'Pilihan Keluarga wajib diisi!',
             'complaint.string' => 'Form keluhan harus berupa teks!',
             'complaint.max' => 'Panjang teks keluhan hanya 255 karakter!',
         ];

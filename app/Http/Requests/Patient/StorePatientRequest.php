@@ -23,12 +23,13 @@ class StorePatientRequest extends FormRequest
     {
         return [
             'user_id'   => ['nullable', 'integer', 'exists:users,id'],
-            'record_no' => ['required', 'string', 'max:50', 'unique:patients,record_no'],
+            'record_no' => ['nullable', 'string', 'max:50', 'unique:patients,record_no'],
             'fullname'  => ['required', 'string', 'max:255'],
             'nama_keluarga'  => ['required', 'string', 'max:255'],
             'gender'    => ['required', 'string', 'max:20'],
             'birthday'  => ['nullable', 'date'],
             'age'       => ['required', 'integer'],
+            'no_ktp'    => ['nullable', 'string', 'max:16'],
             'phone'     => ['nullable', 'string', 'max:20'],
             'address'   => ['required', 'string', 'max:255'],
         ];

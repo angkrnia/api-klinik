@@ -18,7 +18,7 @@ class PatientController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role === ADMIN) {
+        if ($user->role === ADMIN || $user->role === PERAWAT) {
             $request = $request->query();
             $query = Patient::query();
 
@@ -51,7 +51,13 @@ class PatientController extends Controller
      */
     public function store(StorePatientRequest $request)
     {
-        $patient = Patient::create($request->validated());
+        $data = $request->validated();
+
+        if (auth()->user()->role === PASIEN) {
+            $data = array_merge($data, ['user_id' => auth()->user()->id]);
+        }
+
+        $patient = Patient::create($data);
 
         return response()->json([
             'code'      => 201,
