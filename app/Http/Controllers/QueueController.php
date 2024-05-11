@@ -24,8 +24,8 @@ class QueueController extends Controller
         $patientIds = $user->patient->pluck('id')->toArray();
         $request = $request->query();
         $query = Queue::query();
-        $currentDate = Carbon::now()->toDateString();
-        $yesterday = Carbon::yesterday()->toDateString();
+
+        $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
 
         if (isset($request['search'])) {
             $searchKeyword = $request['search'];
@@ -35,7 +35,7 @@ class QueueController extends Controller
         if (!isset($request['data']) && @$request['data'] !== 'all') {
             if ($user->role === PASIEN) {
                 $antrianSaya = Queue::whereIn('patient_id', $patientIds)
-                ->whereDate('created_at', $currentDate)
+                ->where('id', '>', $lastQueueId)
                 ->where(function ($query) {
                     $query->where('status', 'waiting')
                     ->orWhere('status', 'on waiting');
@@ -51,7 +51,9 @@ class QueueController extends Controller
 
         if (isset($request['date']) && !empty($request['date'])) {
             $date = $request['date'];
-            $query->whereDate('created_at', $date)->orWhereDate('created_at', $yesterday);
+            $query->whereDate('created_at', $date);
+        } else {
+            $query->where('id', '>', $lastQueueId);
         }
 
         if (isset($request['status']) && !empty($request['status'])) {
@@ -73,9 +75,9 @@ class QueueController extends Controller
         }
 
         // Menghitung jumlah antrian pada hari ini
-        $queueCount = Queue::whereDate('created_at', $currentDate)->count();
-        $sisaAntrian = Queue::whereIn('status', ['waiting', 'on waiting'])->whereDate('created_at', $currentDate)->count();
-        $currentAntrian = Queue::where('status', 'on process')->whereDate('created_at', $currentDate)->value('queue');
+        $queueCount = DB::select('CALL GET_TOTAL_ANTRIAN()')[0]->total_antrian;
+        $sisaAntrian = DB::select('CALL GET_SISA_ANTRIAN_ALL()')[0]->sisa_antrian;
+        $currentAntrian = DB::select('CALL GET_ANTRIAN_SAAT_INI')[0]->antrian_saat_ini;
 
         return response()->json([
             'code'             => 200,
@@ -91,14 +93,13 @@ class QueueController extends Controller
     public function checkAntrian()
     {
         $user = Auth::user();
-        $currentDate = Carbon::now()->toDateString();
 
         // Menghitung jumlah antrian pada hari ini
-        $queueCount = Queue::whereDate('created_at', $currentDate)->count();
-        $currentAntrian = Queue::where('status', 'on process')->whereDate('created_at', $currentDate)->value('queue');
+        $queueCount = DB::select('CALL GET_TOTAL_ANTRIAN()')[0]->total_antrian;
+        $currentAntrian = DB::select('CALL GET_ANTRIAN_SAAT_INI')[0]->antrian_saat_ini;
 
         if ($user->role == ADMIN || $user->role == DOKTER || $user->role == PERAWAT) {
-            $sisaAntrian = Queue::where('status', 'waiting')->whereDate('created_at', $currentDate)->count();
+            $sisaAntrian = DB::select('CALL GET_SISA_ANTRIAN_ALL()')[0]->sisa_antrian;
 
             return response()->json([
                 'code'      => 200,
@@ -110,22 +111,27 @@ class QueueController extends Controller
                 ]
             ]);
         } else {
+            $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
             $patientIds = $user->patient->pluck('id')->toArray();
-            $antrianSaya = Queue::whereIn('patient_id', $patientIds)->whereDate('created_at', $currentDate)->where(function ($query) {
+            $antrianSaya = Queue::whereIn('patient_id', $patientIds)->where('id', '>', $lastQueueId)->where(function ($query) {
                 $query->where('status', 'waiting')
                     ->orWhere('status', 'on waiting');
             })->value('queue');
             $sisaAntrian = Queue::whereIn('status', ['waiting', 'on waiting'])
-                ->whereDate('created_at', $currentDate)
+                ->where('id', '>', $lastQueueId)
                 ->where('queue', $antrianSaya)
                 ->value('queue') -
                 Queue::whereIn('status', ['waiting'])
-                ->whereDate('created_at', $currentDate)
+                ->where('id', '>', $lastQueueId)
                 ->min('queue');
-            $antrian = Queue::with([DOKTER, PASIEN])->whereIn('patient_id', $patientIds)->whereDate('created_at', $currentDate)->where(function ($query) {
-                $query->where('status', 'waiting')
-                    ->orWhere('status', 'on waiting');
-            })->get();
+            $antrian = Queue::with([DOKTER, PASIEN])
+                ->where('id', '>', $lastQueueId)
+                ->whereIn('patient_id', $patientIds)
+                ->where(function ($query) {
+                    $query->where('status', 'waiting')
+                        ->orWhere('status', 'on waiting');
+                })
+                ->get();
 
             return response()->json([
                 'code'      => 200,
@@ -143,9 +149,8 @@ class QueueController extends Controller
 
     public function publicAntrian()
     {
-        $currentDate = Carbon::now()->toDateString();
-        $queueCount = Queue::whereDate('created_at', $currentDate)->count();
-        $currentAntrian = Queue::where('status', 'on process')->whereDate('created_at', $currentDate)->value('queue');
+        $queueCount = DB::select('CALL GET_TOTAL_ANTRIAN()')[0]->total_antrian;
+        $currentAntrian = DB::select('CALL GET_ANTRIAN_SAAT_INI')[0]->antrian_saat_ini;
         return response()->json([
             'code'      => 200,
             'status'    => true,
@@ -172,10 +177,10 @@ class QueueController extends Controller
     {
         try {
             DB::beginTransaction();
-            $currentDate = Carbon::now()->toDateString();
             $patientId = $request->input('patient_id');
+            $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
 
-            $existingWaitingQueue = Queue::whereDate('created_at', $currentDate)
+            $existingWaitingQueue = Queue::where('id', '>', $lastQueueId)
                 ->where('status', 'waiting')
                 ->orWhere('status', 'on waiting')
                 ->where('patient_id', $patientId)
@@ -386,9 +391,11 @@ class QueueController extends Controller
     public function resetAntrian()
     {
         $latestQueue = Queue::latest()->first();
-        if ($latestQueue) {
+        if ($latestQueue->status !== 'waiting' && $latestQueue->status !== 'on waiting') {
             $latestQueue->update(['is_last_queue' => true]);
             return response()->json(['message' => 'Antrian berhasil direset']);
+        } else {
+            return response()->json(['message' => 'Masih ada antrian yang belum selesai, tidak bisa direset. Mohon selesaikan seluruh antrian terlebih dahulu'], 400);
         }
     }
 

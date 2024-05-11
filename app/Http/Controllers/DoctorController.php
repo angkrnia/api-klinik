@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DoctorController extends Controller
 {
@@ -52,15 +53,19 @@ class DoctorController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(DoctorRequest $request)
+    public function store(Request $request)
     {
+        Log::info($request);
         try {
             DB::beginTransaction();
+            $imageUrl = null;
 
-            $imageFile = $request->file('image');
-            $imageName = date('md_His') . '_' . $imageFile->getClientOriginalName();
-            $imagePath = $imageFile->move(public_path('doctors'), $imageName);
-            $imageUrl = url('doctors/' . $imageName);
+            if($request->has('image')) {
+                $imageFile = $request->file('image');
+                $imageName = date('md_His') . '_' . $imageFile->getClientOriginalName();
+                $imagePath = $imageFile->move(public_path('doctors'), $imageName);
+                $imageUrl = url('doctors/' . $imageName);
+            }
 
             // Membuat dokter baru
             $user = User::create([
@@ -80,8 +85,7 @@ class DoctorController extends Controller
                 'start_day' => $request->start_day,
                 'end_day' => $request->end_day,
                 'start_time' => $request->start_time,
-                'end_time' => $request->end_time,
-                'user_id' => $request->user_id,
+                'end_time' => $request->end_time
             ]);
 
             DB::commit();

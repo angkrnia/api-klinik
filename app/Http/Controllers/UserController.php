@@ -18,7 +18,11 @@ class UserController extends Controller
      */
     public function index()
     {
-        $result = User::findOrFail(auth()->user()->id);
+        if(auth()->user()->role === DOKTER) {
+            $result = User::with(['doctor'])->findOrFail(auth()->user()->id);
+        } else {
+            $result = User::findOrFail(auth()->user()->id);
+        }
 
         return response()->json([
             'code'      => 200,
