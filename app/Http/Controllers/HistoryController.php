@@ -30,7 +30,9 @@ class HistoryController extends Controller
             $to = $request['to'];
         }
 
-        $query->whereBetween('created_at', [$from ?? '', $to ?? '']);
+        if(isset($request['from']) && isset($request['to'])) {
+            $query->whereBetween('created_at', [$from, $to]);
+        }
 
         if (isset($request['patient_id']) && !empty($request['patient_id'])) {
             $patient_id = $request['patient_id'];
@@ -58,7 +60,7 @@ class HistoryController extends Controller
 
         if (isset($request['limit']) || isset($request['page'])) {
             $limit = $request['limit'] ?? 10;
-            $history = $query->with(['queue.doctor', 'patient'])->paginate($limit);
+            $history = $query->with(['queue.doctor', 'patient'])->paginate($limit)->appends(request()->query());
         } else {
             $history = $query->with(['queue.doctor', 'patient'])->get(); // Untuk Print atau Download
         }

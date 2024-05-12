@@ -38,7 +38,8 @@ class QueueController extends Controller
                 ->where('id', '>', $lastQueueId)
                 ->where(function ($query) {
                     $query->where('status', 'waiting')
-                    ->orWhere('status', 'on waiting');
+                    ->orWhere('status', 'on waiting')
+                    ->orWhere('status', 'on process');
                 })
                 ->value('queue');
                 $query->whereIn('patient_id', $patientIds);
@@ -69,7 +70,7 @@ class QueueController extends Controller
 
         if (isset($request['limit']) || isset($request['page'])) {
             $limit = $request['limit'] ?? 10;
-            $result = $query->with([PASIEN, DOKTER, HISTORY])->paginate($limit);
+            $result = $query->with([PASIEN, DOKTER, HISTORY])->paginate($limit)->appends(request()->query());
         } else {
             $result = $query->with([PASIEN, DOKTER, HISTORY])->get(); // Untuk Print atau Download
         }
@@ -115,9 +116,9 @@ class QueueController extends Controller
             $patientIds = $user->patient->pluck('id')->toArray();
             $antrianSaya = Queue::whereIn('patient_id', $patientIds)->where('id', '>', $lastQueueId)->where(function ($query) {
                 $query->where('status', 'waiting')
-                    ->orWhere('status', 'on waiting');
+                    ->orWhere('status', 'on waiting')->orWhere('status', 'on process');
             })->value('queue');
-            $sisaAntrian = Queue::whereIn('status', ['waiting', 'on waiting'])
+            $sisaAntrian = Queue::whereIn('status', ['waiting', 'on waiting', 'on process'])
                 ->where('id', '>', $lastQueueId)
                 ->where('queue', $antrianSaya)
                 ->value('queue') -
@@ -129,7 +130,8 @@ class QueueController extends Controller
                 ->whereIn('patient_id', $patientIds)
                 ->where(function ($query) {
                     $query->where('status', 'waiting')
-                        ->orWhere('status', 'on waiting');
+                        ->orWhere('status', 'on waiting')
+                ->orWhere('status', 'on process');
                 })
                 ->get();
 

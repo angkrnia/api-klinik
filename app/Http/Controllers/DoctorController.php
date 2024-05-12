@@ -30,7 +30,7 @@ class DoctorController extends Controller
 
         if (isset($request['limit']) || isset($request['page'])) {
             $limit = $request['limit'] ?? 10;
-            $result = $query->with([USER])->paginate($limit);
+            $result = $query->with([USER])->paginate($limit)->appends(request()->query());
         } else {
             $result = $query->with([USER])->get(); // Untuk Print atau Download
         }
