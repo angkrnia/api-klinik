@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\History;
+use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -16,8 +17,38 @@ class HistoryController extends Controller
         $history = [];
 
         if ($user->role === PASIEN) {
-            $patient = $user->patient()->first();
-            $query = $query->where('patient_id', $patient->id);
+            $patientIds = $user->patient->pluck('id')->toArray();
+            $query = $query->whereIn('patient_id', $patientIds);
+        }
+
+        // FILTER
+        if (isset($request['from'])) {
+            $from = $request['from'];
+        }
+
+        if (isset($request['to'])) {
+            $to = $request['to'];
+        }
+
+        $query->whereBetween('created_at', [$from ?? '', $to ?? '']);
+
+        if (isset($request['patient_id']) && !empty($request['patient_id'])) {
+            $patient_id = $request['patient_id'];
+            $query->where('patient_id', $patient_id);
+        }
+
+        if (isset($request['doctor_id']) && !empty($request['doctor_id'])) {
+            $doctor_id = $request['doctor_id'];
+            $query->whereHas('queue.doctor', function($query) use ($doctor_id) {
+                $query->where('id', $doctor_id);
+            });
+        }
+
+        if (isset($request['sort']) && !empty($request['sort'])) {
+            $sort = $request['sort'];
+            $query->orderBy('created_at', $sort);
+        } else {
+            $query->orderBy('created_at', 'desc');
         }
 
         if (isset($request['search'])) {
@@ -25,13 +56,11 @@ class HistoryController extends Controller
             $query->keywordSearch($searchKeyword);
         }
 
-        $query->orderBy('created_at', 'desc');
-
         if (isset($request['limit']) || isset($request['page'])) {
             $limit = $request['limit'] ?? 10;
-            $history = $query->with('queue.doctor')->paginate($limit);
+            $history = $query->with(['queue.doctor', 'patient'])->paginate($limit);
         } else {
-            $history = $query->with('queue.doctor')->get(); // Untuk Print atau Download
+            $history = $query->with(['queue.doctor', 'patient'])->get(); // Untuk Print atau Download
         }
 
         return response()->json([

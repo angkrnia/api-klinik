@@ -27,6 +27,11 @@ class History extends Model
         return $this->belongsTo(Queue::class);
     }
 
+    public function patient()
+    {
+        return $this->belongsTo(Patient::class);
+    }
+
     public function scopeKeywordSearch(Builder $query, string $searchKeyword): Builder
     {
         $columns = $this->fillable;
