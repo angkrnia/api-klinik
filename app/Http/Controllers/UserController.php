@@ -50,7 +50,6 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        Log::info($user);
         $request->validate([
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             // 'record_no' => ['nullable', 'string', 'max:255'],
@@ -74,6 +73,14 @@ class UserController extends Controller
             }
 
             $user->update($request->all());
+
+            // Jika dokter
+            if(auth()->user()->role === DOKTER) {
+                $user->doctor()->update([
+                    'phone' => $request->phone,
+                    'description' => $request->description,
+                ]);
+            }
 
             DB::commit();
             return response()->json([

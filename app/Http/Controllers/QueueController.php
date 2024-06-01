@@ -36,22 +36,22 @@ class QueueController extends Controller
             $query->keywordSearch($searchKeyword);
         }
 
-        if (!isset($request['data']) && @$request['data'] !== 'all') {
-            if ($user->role === PASIEN) {
-                $antrianSaya = Queue::whereIn('patient_id', $patientIds)
-                ->where('id', '>', $lastQueueId)
-                ->where(function ($query) {
-                    $query->where('status', 'waiting')
-                    ->orWhere('status', 'on waiting')
-                    ->orWhere('status', 'on process');
-                })
-                ->value('queue');
-                $query->whereIn('patient_id', $patientIds);
-            } elseif ($user->role === DOKTER) {
-                $query->whereHas(DOKTER, function ($q) use ($user) {
-                    $q->where('user_id', $user->doctor->id);
-                });
-            }
+        // if (!isset($request['data']) && @$request['data'] !== 'all') {
+        // }
+        if ($user->role === PASIEN) {
+            $antrianSaya = Queue::whereIn('patient_id', $patientIds)
+            ->where('id', '>', $lastQueueId)
+            ->where(function ($query) {
+                $query->where('status', 'waiting')
+                ->orWhere('status', 'on waiting')
+                ->orWhere('status', 'on process');
+            })
+            ->value('queue');
+            $query->whereIn('patient_id', $patientIds);
+        } elseif ($user->role === DOKTER) {
+            $query->whereHas(DOKTER, function ($q) use ($user) {
+                $q->where('user_id', $user->doctor->id);
+            });
         }
 
         if (isset($request['date']) && !empty($request['date'])) {
