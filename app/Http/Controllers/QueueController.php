@@ -27,6 +27,10 @@ class QueueController extends Controller
 
         $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
 
+        if(!$lastQueueId) {
+            $lastQueueId = 0;
+        }
+
         if (isset($request['search'])) {
             $searchKeyword = $request['search'];
             $query->keywordSearch($searchKeyword);
@@ -113,6 +117,9 @@ class QueueController extends Controller
             ]);
         } else {
             $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
+            if(!$lastQueueId) {
+                $lastQueueId = 0;
+            }
             $patientIds = $user->patient->pluck('id')->toArray();
             $antrianSaya = Queue::whereIn('patient_id', $patientIds)->where('id', '>', $lastQueueId)->where(function ($query) {
                 $query->where('status', 'waiting')
@@ -181,7 +188,9 @@ class QueueController extends Controller
             DB::beginTransaction();
             $patientId = $request->input('patient_id');
             $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
-
+            if (!$lastQueueId) {
+                $lastQueueId = 0;
+            }
             $existingWaitingQueue = Queue::where('id', '>', $lastQueueId)
                 ->where('status', 'waiting')
                 ->orWhere('status', 'on waiting')
@@ -246,6 +255,7 @@ class QueueController extends Controller
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();
+            Log::info($th);
             return response()->json([
                 'code'      => 500,
                 'status'    => false,
@@ -289,12 +299,13 @@ class QueueController extends Controller
      */
     public function update(Request $request, Queue $queue)
     {
-        $doctor = auth()->user()->doctor;
+        Log::info($queue);
+        $user = Auth::user();
+        $doctor = $user->doctor;
         $queue->update([
             'status' => $request->status,
             'doctor_id' => $doctor->id
         ]);
-
         $soundPath = public_path('assets/voice-announcement/' . $queue->queue . '.mp3');
 
         // Memeriksa apakah file suara ada

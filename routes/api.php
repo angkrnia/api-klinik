@@ -33,6 +33,7 @@ Route::middleware(['auth:api'])->group(function () {
 		Route::put('facilities/{facility}', [\App\Http\Controllers\FacilityController::class, 'update']);
 		Route::delete('facilities/{facility}', [\App\Http\Controllers\FacilityController::class, 'destroy']);
 		Route::post('reset-antrian', [App\Http\Controllers\QueueController::class, 'resetAntrian']);
+		Route::get('dashboard/summary-patien', [App\Http\Controllers\DashboardController::class, 'getSummaryPatient']);
 	});
 
 	// ROUTE DOKTER

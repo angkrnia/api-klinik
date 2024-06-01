@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Doctor;
-use App\Models\Patient;
 use App\Models\User;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -19,9 +17,9 @@ class UserController extends Controller
     public function index()
     {
         if(auth()->user()->role === DOKTER) {
-            $result = User::with(['doctor'])->findOrFail(auth()->user()->id);
+            $result = User::with([DOKTER])->findOrFail(auth()->user()->id);
         } else {
-            $result = User::findOrFail(auth()->user()->id);
+            $result = User::with(PASIEN)->findOrFail(auth()->user()->id);
         }
 
         return response()->json([
@@ -52,6 +50,7 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        Log::info($user);
         $request->validate([
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             // 'record_no' => ['nullable', 'string', 'max:255'],

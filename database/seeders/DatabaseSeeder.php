@@ -19,14 +19,16 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
         \App\Models\User::create([
+            'fullname' => 'dr Friska Sinambela',
             'email' => 'dr.friska@gmail.com',
             'password' => bcrypt('123456'),
             'role' => DOKTER,
         ]);
-        // \App\Models\User::create([
-        //     'email' => 'anggakurnia712@gmail.com',
-        //     'password' => bcrypt('angga9980'),
-        //     'role' => ADMIN,
-        // ]);
+        \App\Models\User::create([
+            'fullname' => 'Angga kurnia',
+            'email' => 'anggakurnia712@gmail.com',
+            'password' => bcrypt('angga9980'),
+            'role' => ADMIN,
+        ]);
     }
 }
