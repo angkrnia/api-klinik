@@ -73,7 +73,7 @@ class QueueController extends Controller
         }
 
         if (isset($request['limit']) || isset($request['page'])) {
-            $limit = $request['limit'] ?? 10;
+            $limit = $request['limit'] ?? 25;
             $result = $query->with([PASIEN, DOKTER, HISTORY])->paginate($limit)->appends(request()->query());
         } else {
             $result = $query->with([PASIEN, DOKTER, HISTORY])->get(); // Untuk Print atau Download
@@ -121,17 +121,16 @@ class QueueController extends Controller
                 $lastQueueId = 0;
             }
             $patientIds = $user->patient->pluck('id')->toArray();
-            $antrianSaya = Queue::whereIn('patient_id', $patientIds)->where('id', '>', $lastQueueId)->where(function ($query) {
-                $query->where('status', 'waiting')
-                    ->orWhere('status', 'on waiting')->orWhere('status', 'on process');
-            })->value('queue');
+            $antrianSaya = Queue::whereIn('patient_id', $patientIds)
+            ->where('id', '>', $lastQueueId)
+            ->where(function ($query) {
+                $query->whereIn('status', ['waiting', 'on waiting', 'on process']);
+            })
+            ->pluck('queue');
             $sisaAntrian = Queue::whereIn('status', ['waiting', 'on waiting', 'on process'])
                 ->where('id', '>', $lastQueueId)
-                ->where('queue', $antrianSaya)
-                ->value('queue') -
-                Queue::whereIn('status', ['waiting'])
-                ->where('id', '>', $lastQueueId)
-                ->min('queue');
+                ->whereIn('queue', $antrianSaya)
+                ->pluck('queue');
             $antrian = Queue::with([DOKTER, PASIEN])
                 ->where('id', '>', $lastQueueId)
                 ->whereIn('patient_id', $patientIds)
@@ -141,7 +140,8 @@ class QueueController extends Controller
                 ->orWhere('status', 'on process');
                 })
                 ->get();
-
+            $antrianSaatIni = Queue::where('id', '>', $lastQueueId)->where('status', 'waiting')->first()->queue;
+            Log::info($antrianSaatIni);
             return response()->json([
                 'code'      => 200,
                 'status'    => true,
@@ -149,7 +149,9 @@ class QueueController extends Controller
                     'antrian_hari_ini' => $queueCount,
                     'antrian_saat_ini' => $currentAntrian,
                     'antrian_saya'     => $antrianSaya,
-                    'sisa_antrian'     => (int) $sisaAntrian + 1,
+                    'sisa_antrian'     => $sisaAntrian->map(function ($item) use ($antrianSaatIni) {
+                        return abs($item - $antrianSaatIni);
+                    }),
                     'antrian'          => $antrian
                 ]
             ]);
@@ -192,9 +194,9 @@ class QueueController extends Controller
                 $lastQueueId = 0;
             }
             $existingWaitingQueue = Queue::where('id', '>', $lastQueueId)
+                ->where('patient_id', $patientId)
                 ->where('status', 'waiting')
                 ->orWhere('status', 'on waiting')
-                ->where('patient_id', $patientId)
                 ->first();
 
             if ($existingWaitingQueue) {

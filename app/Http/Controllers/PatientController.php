@@ -62,7 +62,7 @@ class PatientController extends Controller
         return response()->json([
             'code'      => 201,
             'status'    => true,
-            'message'   => 'Pasien baru berhasil ditambahkankan.',
+            'message'   => 'Pasien baru berhasil ditambahkan.',
             'data'      => $patient
         ], 201);
     }
