@@ -140,7 +140,12 @@ class QueueController extends Controller
                 ->orWhere('status', 'on process');
                 })
                 ->get();
-            $antrianSaatIni = Queue::where('id', '>', $lastQueueId)->where('status', 'waiting')->first()->queue;
+            $antrianSaatIni = Queue::where('id', '>', $lastQueueId)->where('status', 'waiting')->first();
+            if(!$antrianSaatIni) {
+                $antrianSaatIni = null;
+            } else {
+                $antrianSaatIni = $antrianSaatIni->queue;
+            }
             Log::info($antrianSaatIni);
             return response()->json([
                 'code'      => 200,
@@ -194,9 +199,8 @@ class QueueController extends Controller
                 $lastQueueId = 0;
             }
             $existingWaitingQueue = Queue::where('id', '>', $lastQueueId)
-                ->where('patient_id', $patientId)
-                ->where('status', 'waiting')
-                ->orWhere('status', 'on waiting')
+                ->where('patient_id', 2)
+                ->whereIn('status', ['waiting', 'on waiting'])
                 ->first();
 
             if ($existingWaitingQueue) {
