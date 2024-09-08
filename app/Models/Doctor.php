@@ -12,6 +12,7 @@ class Doctor extends Model
     protected $fillable = [
         'fullname',
         'phone',
+        'avatar',
         'description',
         'start_day',
         'end_day',

@@ -61,6 +61,7 @@ class DoctorController extends Controller
             $imageUrl = null;
 
             if($request->has('image')) {
+                Log::info($request->file('image'));
                 $imageFile = $request->file('image');
                 $imageName = date('md_His') . '_' . $imageFile->getClientOriginalName();
                 $imagePath = $imageFile->move(public_path('doctors'), $imageName);
