@@ -55,13 +55,11 @@ class DoctorController extends Controller
      */
     public function store(Request $request)
     {
-        Log::info($request);
         try {
             DB::beginTransaction();
             $imageUrl = null;
 
             if($request->has('image')) {
-                Log::info($request->file('image'));
                 $imageFile = $request->file('image');
                 $imageName = date('md_His') . '_' . $imageFile->getClientOriginalName();
                 $imagePath = $imageFile->move(public_path('doctors'), $imageName);
@@ -82,6 +80,7 @@ class DoctorController extends Controller
                 'fullname' => $request->fullname,
                 'phone' => $request->phone,
                 'avatar' => $imageUrl,
+                'gender' => $request->gender,
                 'description' => $request->description,
                 'start_day' => $request->start_day,
                 'end_day' => $request->end_day,

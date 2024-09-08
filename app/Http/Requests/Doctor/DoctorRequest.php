@@ -24,14 +24,15 @@ class DoctorRequest extends FormRequest
         return [
             'fullname'     => ['required', 'string', 'max:255'],
             'email'        => ['required', 'string', 'max:100'],
-            'password'     => ['required', 'string', 'max:255'],
+            'password'     => ['nullable', 'string', 'max:255'],
             'phone'        => ['required', 'string', 'max:20'],
-            'avatar'       => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp'],
+            // 'avatar'       => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp'],
             'description'  => ['nullable', 'string', 'max:255'],
             'start_day'    => ['required', 'string', 'lowercase', 'max:20'],
             'end_day'      => ['required', 'string', 'lowercase', 'max:20'],
             'start_time'   => ['required', 'string', 'max:20'],
             'end_time'     => ['required', 'string', 'max:20'],
+            'gender'       => ['nullable', 'string', 'max:20'],
         ];
     }
 }

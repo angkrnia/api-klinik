@@ -82,7 +82,7 @@ class QueueController extends Controller
         // Menghitung jumlah antrian pada hari ini
         $queueCount = DB::select('CALL GET_TOTAL_ANTRIAN()')[0]->total_antrian;
         $sisaAntrian = DB::select('CALL GET_SISA_ANTRIAN_ALL()')[0]->sisa_antrian;
-        $currentAntrian = DB::select('CALL GET_ANTRIAN_SAAT_INI')[0]->antrian_saat_ini;
+        $currentAntrian = DB::select('CALL GET_ANTRIAN_SAAT_INI()')[0]->antrian_saat_ini;
 
         return response()->json([
             'code'             => 200,
@@ -146,7 +146,6 @@ class QueueController extends Controller
             } else {
                 $antrianSaatIni = $antrianSaatIni->queue;
             }
-            Log::info($antrianSaatIni);
             return response()->json([
                 'code'      => 200,
                 'status'    => true,
@@ -199,7 +198,7 @@ class QueueController extends Controller
                 $lastQueueId = 0;
             }
             $existingWaitingQueue = Queue::where('id', '>', $lastQueueId)
-                ->where('patient_id', 2)
+                ->where('patient_id', $patientId)
                 ->whereIn('status', ['waiting', 'on waiting'])
                 ->first();
 

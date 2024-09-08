@@ -17,7 +17,7 @@ class IsDoctor
     {
         $role = auth()->user()->role;
 
-        if (auth()->check() && $role === 'doctor' || $role === 'dokter') {
+        if (auth()->check() && $role === 'doctor' || $role === 'dokter' || $role === 'admin') {
             return $next($request);
         }
 

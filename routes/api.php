@@ -29,6 +29,7 @@ Route::middleware(['auth:api'])->group(function () {
 	// ROUTE ADMIN
 	Route::middleware(['admin'])->group(function() {
 		Route::post('doctors', [App\Http\Controllers\DoctorController::class, 'store']);
+		Route::put('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'update']);
 		Route::delete('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'destroy']);
 		Route::delete('patients/{patient}', [App\Http\Controllers\PatientController::class, 'destroy']);
 		Route::post('facilities', [\App\Http\Controllers\FacilityController::class, 'store']);
