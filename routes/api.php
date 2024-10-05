@@ -49,6 +49,7 @@ Route::middleware(['auth:api'])->group(function () {
 	});
 
 	// ROUTE
+	Route::get('users/{patient}/detail', [App\Http\Controllers\UserController::class, 'detail']);
 	Route::apiResource('users', App\Http\Controllers\UserController::class);
 	Route::apiResource('schedules', App\Http\Controllers\ScheduleDoctorController::class);
 });
