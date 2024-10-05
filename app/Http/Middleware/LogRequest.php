@@ -24,6 +24,7 @@ class LogRequest
             'user' => auth()->check() ? auth()->user()->fullname : 'Tamu',
             'ip_address' => $request->ip(),
             // 'body' => json_encode($request->all()),
+            'body' => '-',
             'created_at' => Carbon::now()->setTimezone('Asia/Jakarta')->toDateTimeString()
         ];
 
