@@ -53,6 +53,13 @@ class HistoryController extends Controller
             });
         }
 
+        if (isset($request['patient_name']) && !empty($request['patient_name'])) {
+            $patientName = $request['patient_name'];
+            $query->whereHas('patient', function ($query) use ($patientName) {
+                $query->where('fullname', 'LIKE', "%{$patientName}%");
+            });
+        }
+
         if (isset($request['sort']) && !empty($request['sort'])) {
             $sort = $request['sort'];
             $query->orderBy('created_at', $sort);

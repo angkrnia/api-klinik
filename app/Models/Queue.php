@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -34,5 +35,15 @@ class Queue extends Model
     public function doctor()
     {
         return $this->belongsTo(Doctor::class);
+    }
+
+    public function scopeKeywordSearch(Builder $query, string $searchKeyword): Builder
+    {
+        $columns = $this->fillable;
+        return $query->where(function ($query) use ($searchKeyword, $columns) {
+            foreach ($columns as $column) {
+                $query->orWhere($column, 'LIKE', "%$searchKeyword%");
+            }
+        });
     }
 }

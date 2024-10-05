@@ -27,7 +27,7 @@ class QueueController extends Controller
 
         $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
 
-        if(!$lastQueueId) {
+        if (!$lastQueueId) {
             $lastQueueId = 0;
         }
 
@@ -40,13 +40,13 @@ class QueueController extends Controller
         // }
         if ($user->role === PASIEN) {
             $antrianSaya = Queue::whereIn('patient_id', $patientIds)
-            ->where('id', '>', $lastQueueId)
-            ->where(function ($query) {
-                $query->where('status', 'waiting')
-                ->orWhere('status', 'on waiting')
-                ->orWhere('status', 'on process');
-            })
-            ->value('queue');
+                ->where('id', '>', $lastQueueId)
+                ->where(function ($query) {
+                    $query->where('status', 'waiting')
+                        ->orWhere('status', 'on waiting')
+                        ->orWhere('status', 'on process');
+                })
+                ->value('queue');
             $query->whereIn('patient_id', $patientIds);
         }
         // elseif ($user->role === DOKTER) {
@@ -64,13 +64,25 @@ class QueueController extends Controller
 
         if (isset($request['status']) && !empty($request['status'])) {
             $status = $request['status'];
+            if ($status === 'vital-sign') {
+                $status = 'on waiting';
+            }
             $query->whereStatus($status);
         }
 
-        if ($user->role === DOKTER) {
-            $query->orderBy('created_at', 'asc');
+        $sort = $request['sort'] ?? null;
+        if (!empty($sort)) {
+            $query->orderBy('queue', $sort);
         } else {
-            $query->orderBy('created_at', 'desc');
+            $orderByDirection = $user->role === DOKTER ? 'asc' : 'desc';
+            $query->orderBy('created_at', $orderByDirection);
+        }
+
+        $patientName = $request['patient_name'] ?? null;
+        if (!empty($patientName)) {
+            $query->whereHas(PASIEN, function ($q) use ($patientName) {
+                $q->where('fullname', 'like', '%' . $patientName . '%');
+            });
         }
 
         if (isset($request['limit']) || isset($request['page'])) {
@@ -118,16 +130,16 @@ class QueueController extends Controller
             ]);
         } else {
             $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
-            if(!$lastQueueId) {
+            if (!$lastQueueId) {
                 $lastQueueId = 0;
             }
             $patientIds = $user->patient->pluck('id')->toArray();
             $antrianSaya = Queue::whereIn('patient_id', $patientIds)
-            ->where('id', '>', $lastQueueId)
-            ->where(function ($query) {
-                $query->whereIn('status', ['waiting', 'on waiting', 'on process']);
-            })
-            ->pluck('queue');
+                ->where('id', '>', $lastQueueId)
+                ->where(function ($query) {
+                    $query->whereIn('status', ['waiting', 'on waiting', 'on process']);
+                })
+                ->pluck('queue');
             $sisaAntrian = Queue::whereIn('status', ['waiting', 'on waiting', 'on process'])
                 ->where('id', '>', $lastQueueId)
                 ->whereIn('queue', $antrianSaya)
@@ -138,11 +150,11 @@ class QueueController extends Controller
                 ->where(function ($query) {
                     $query->where('status', 'waiting')
                         ->orWhere('status', 'on waiting')
-                ->orWhere('status', 'on process');
+                        ->orWhere('status', 'on process');
                 })
                 ->get();
             $antrianSaatIni = Queue::where('id', '>', $lastQueueId)->where('status', 'waiting')->first();
-            if(!$antrianSaatIni) {
+            if (!$antrianSaatIni) {
                 $antrianSaatIni = null;
             } else {
                 $antrianSaatIni = $antrianSaatIni->queue;
@@ -465,7 +477,7 @@ class QueueController extends Controller
 
         $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
 
-        if(!$lastQueueId) {
+        if (!$lastQueueId) {
             $lastQueueId = 0;
         }
 
@@ -534,6 +546,50 @@ class QueueController extends Controller
             'status'    => true,
             'message'   => 'Berhasil panggil pasien.',
             'sound'     => $soundUrl,
+        ]);
+    }
+
+    public function pharmacy(Request $request)
+    {
+        $request = $request->query();
+        $query = Queue::query();
+
+        $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
+
+        if (!$lastQueueId) {
+            $lastQueueId = 0;
+        }
+
+        if (isset($request['date']) && !empty($request['date'])) {
+            $date = $request['date'];
+            $query->whereDate('created_at', $date);
+        } else {
+            $query->where('id', '>', $lastQueueId);
+        }
+
+        if (isset($request['patient_name']) && !empty($request['patient_name'])) {
+            $patientName = $request['patient_name'];
+            $query->whereHas('patient', function ($query) use ($patientName) {
+                $query->where('fullname', 'LIKE', "%{$patientName}%");
+            });
+        }
+
+        if (isset($request['sort']) && !empty($request['sort'])) {
+            $sort = $request['sort'];
+            $query->orderBy('status', $sort);
+        } else {
+            $query->orderBy('status', 'desc');
+        }
+
+        $query->whereStatus('done');
+
+        $limit = $request['limit'] ?? 25;
+        $result = $query->with([PASIEN, DOKTER, HISTORY])->paginate($limit)->appends(request()->query());
+
+        return response()->json([
+            'code'             => 200,
+            'status'           => true,
+            'data'             => $result,
         ]);
     }
 }

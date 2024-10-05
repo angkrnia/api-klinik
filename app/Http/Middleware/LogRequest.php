@@ -23,8 +23,7 @@ class LogRequest
             'url' => $request->getPathInfo(),
             'user' => auth()->check() ? auth()->user()->fullname : 'Tamu',
             'ip_address' => $request->ip(),
-            // 'body' => json_encode($request->all()),
-            'body' => '-',
+            'body' => json_encode($request->all()),
             'created_at' => Carbon::now()->setTimezone('Asia/Jakarta')->toDateTimeString()
         ];
 

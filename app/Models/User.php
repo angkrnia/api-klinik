@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -48,7 +49,7 @@ class User extends Authenticatable implements JWTSubject
         'password' => 'hashed',
     ];
 
-        /**
+    /**
      * Get the identifier that will be stored in the subject claim of the JWT.
      *
      * @return mixed
@@ -81,5 +82,15 @@ class User extends Authenticatable implements JWTSubject
     public function patient()
     {
         return $this->hasMany(Patient::class);
+    }
+
+    public function scopeKeywordSearch(Builder $query, string $searchKeyword): Builder
+    {
+        $columns = $this->fillable;
+        return $query->where(function ($query) use ($searchKeyword, $columns) {
+            foreach ($columns as $column) {
+                $query->orWhere($column, 'LIKE', "%$searchKeyword%");
+            }
+        });
     }
 }
