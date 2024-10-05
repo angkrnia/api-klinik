@@ -30,7 +30,7 @@ class HistoryController extends Controller
             $to = $request['to'];
         }
 
-        if(isset($request['from']) && isset($request['to'])) {
+        if (isset($request['from']) && isset($request['to'])) {
             $query->whereBetween('created_at', [$from, $to]);
         }
 
@@ -41,8 +41,15 @@ class HistoryController extends Controller
 
         if (isset($request['doctor_id']) && !empty($request['doctor_id'])) {
             $doctor_id = $request['doctor_id'];
-            $query->whereHas('queue.doctor', function($query) use ($doctor_id) {
+            $query->whereHas('queue.doctor', function ($query) use ($doctor_id) {
                 $query->where('id', $doctor_id);
+            });
+        }
+
+        if (isset($request['status']) && !empty($request['status'])) {
+            $status = $request['status'];
+            $query->whereHas('queue', function ($query) use ($status) {
+                $query->where('status', $status);
             });
         }
 

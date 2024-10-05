@@ -23,11 +23,10 @@ class LogRequest
             'url' => $request->getPathInfo(),
             'user' => auth()->check() ? auth()->user()->fullname : 'Tamu',
             'ip_address' => $request->ip(),
-            'body' => json_encode($request->all()),
-            'created_at' => Carbon::now()->setTimezone('Asia/Jakarta')->toDateTimeString(),
-            'updated_at' => Carbon::now()->setTimezone('Asia/Jakarta')->toDateTimeString(),
+            // 'body' => json_encode($request->all()),
+            'created_at' => Carbon::now()->setTimezone('Asia/Jakarta')->toDateTimeString()
         ];
-        
+
         Log::info('request', $logData);
         DB::table('log_request')->insert($logData);
         return $next($request);

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('url');
             $table->string('user');
             $table->string('ip_address');
-            $table->text('body');
+            $table->text('body')->nullable();
             $table->timestamps();
         });
     }

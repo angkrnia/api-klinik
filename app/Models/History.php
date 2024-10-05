@@ -20,6 +20,8 @@ class History extends Model
         'complaint',
         'diagnosa',
         'saran',
+        'pemeriksaan',
+        'teraphy',
     ];
 
     public function queue()

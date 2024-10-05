@@ -48,11 +48,12 @@ class QueueController extends Controller
             })
             ->value('queue');
             $query->whereIn('patient_id', $patientIds);
-        } elseif ($user->role === DOKTER) {
-            $query->whereHas(DOKTER, function ($q) use ($user) {
-                $q->where('user_id', $user->doctor->id);
-            });
         }
+        // elseif ($user->role === DOKTER) {
+        //     $query->whereHas(DOKTER, function ($q) use ($user) {
+        //         $q->where('user_id', $user->doctor->id);
+        //     });
+        // }
 
         if (isset($request['date']) && !empty($request['date'])) {
             $date = $request['date'];
@@ -304,7 +305,6 @@ class QueueController extends Controller
      */
     public function update(Request $request, Queue $queue)
     {
-        Log::info($queue);
         $user = Auth::user();
         $doctor = $user->doctor;
         $queue->update([
@@ -351,7 +351,9 @@ class QueueController extends Controller
     {
         $request->validate([
             'diagnosa'  => ['nullable', 'string', 'max:255'],
-            'saran'     => ['nullable', 'string', 'max:255']
+            'saran'     => ['nullable', 'string', 'max:255'],
+            'teraphy'     => ['nullable', 'string', 'max:255'],
+            'pemeriksaan'     => ['nullable', 'string', 'max:255'],
         ]);
 
         try {
@@ -364,6 +366,8 @@ class QueueController extends Controller
                 [
                     'diagnosa' => $request->diagnosa,
                     'saran' => $request->saran,
+                    'teraphy' => $request->teraphy,
+                    'pemeriksaan' => $request->pemeriksaan,
                     'patient_id' => $queue->patient_id,
                 ]
             );
@@ -452,5 +456,84 @@ class QueueController extends Controller
                 return response()->json(['error' => $th->getMessage()], 500);
             }
         }
+    }
+
+    public function semuaAntrian(Request $request)
+    {
+        $request = $request->query();
+        $query = Queue::query();
+
+        $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
+
+        if(!$lastQueueId) {
+            $lastQueueId = 0;
+        }
+
+        if (isset($request['search'])) {
+            $searchKeyword = $request['search'];
+            $query->keywordSearch($searchKeyword);
+        }
+
+        if (isset($request['date']) && !empty($request['date'])) {
+            $date = $request['date'];
+            $query->whereDate('created_at', $date);
+        } else {
+            $query->where('id', '>', $lastQueueId);
+        }
+
+        if (isset($request['status']) && !empty($request['status'])) {
+            $status = $request['status'];
+            $query->whereStatus($status);
+        }
+
+        if (isset($request['limit']) || isset($request['page'])) {
+            $limit = $request['limit'] ?? 25;
+            $result = $query->paginate($limit)->appends(request()->query());
+        } else {
+            $result = $query->get(); // Untuk Print atau Download
+        }
+
+        $queueCount = DB::select('CALL GET_TOTAL_ANTRIAN()')[0]->total_antrian;
+        $sisaAntrian = DB::select('CALL GET_SISA_ANTRIAN_ALL()')[0]->sisa_antrian;
+        $currentAntrian = DB::select('CALL GET_ANTRIAN_SAAT_INI()')[0]->antrian_saat_ini;
+
+        return response()->json([
+            'code'             => 200,
+            'status'           => true,
+            'antrian_hari_ini' => $queueCount,
+            'antrian_saat_ini' => $currentAntrian,
+            'sisa_antrian'     => $sisaAntrian,
+            'data'             => $result,
+        ]);
+    }
+
+    public function panggilAntrian(Request $request, Queue $queue)
+    {
+        $user = Auth::user();
+        $doctor = $user->doctor;
+        $queue->update([
+            'status' => 'on process',
+            'doctor_id' => $doctor->id
+        ]);
+        $soundPath = public_path('assets/voice-announcement/' . $queue->queue . '.mp3');
+
+        // Memeriksa apakah file suara ada
+        if (File::exists($soundPath)) {
+            // Jika file suara ada, mengembalikan URL untuk file tersebut
+            $soundUrl = asset('assets/voice-announcement/' . $queue->queue . '.mp3');
+        } else {
+            // Jika file suara tidak ada, mengembalikan URL untuk file 'selanjutnya.mp3'
+            $soundUrl = asset('assets/voice-announcement/selanjutnya.mp3');
+        }
+
+        // events
+        AntrianEvent::dispatch("$queue->queue|$soundUrl|$doctor->fullname");
+
+        return response()->json([
+            'code'      => 200,
+            'status'    => true,
+            'message'   => 'Berhasil panggil pasien.',
+            'sound'     => $soundUrl,
+        ]);
     }
 }

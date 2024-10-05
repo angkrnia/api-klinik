@@ -16,6 +16,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('patient-list-by-user', [App\Http\Controllers\PatientController::class, 'patientListByUser']);
 	Route::apiResource('patients', App\Http\Controllers\PatientController::class)->except(['destroy']);
 	Route::get('doctors', [App\Http\Controllers\DoctorController::class, 'index']);
+	Route::get('queue/semua-antrian', [App\Http\Controllers\QueueController::class, 'semuaAntrian']);
 	Route::put('queue/{queue}/vital-sign', [App\Http\Controllers\QueueController::class, 'vitalSign']);
 	Route::get('queue', [App\Http\Controllers\QueueController::class, 'index']);
 	Route::get('queue/check-antrian', [App\Http\Controllers\QueueController::class, 'checkAntrian']);
@@ -42,6 +43,7 @@ Route::middleware(['auth:api'])->group(function () {
 	// ROUTE DOKTER
 	Route::middleware(['doctor'])->group(function () {
 		Route::put('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'update']);
+		Route::put('queue/{queue}/panggil-antrian', [App\Http\Controllers\QueueController::class, 'panggilAntrian']);
 		Route::put('queue/{queue}', [App\Http\Controllers\QueueController::class, 'update']);
 		Route::post('reset-antrian', [App\Http\Controllers\QueueController::class, 'resetAntrian']);
 	});
