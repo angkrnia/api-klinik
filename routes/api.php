@@ -17,7 +17,9 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('patients', App\Http\Controllers\PatientController::class)->except(['destroy']);
 	Route::get('doctors', [App\Http\Controllers\DoctorController::class, 'index']);
 	Route::get('queue/pharmacy', [App\Http\Controllers\QueueController::class, 'pharmacy']);
+	Route::get('queue/pharmacy/{queue}', [App\Http\Controllers\QueueController::class, 'detailPharmacy']);
 	Route::get('queue/semua-antrian', [App\Http\Controllers\QueueController::class, 'semuaAntrian']);
+	Route::put('queue/{queue}/completed', [App\Http\Controllers\QueueController::class, 'completed']);
 	Route::put('queue/{queue}/vital-sign', [App\Http\Controllers\QueueController::class, 'vitalSign']);
 	Route::get('queue', [App\Http\Controllers\QueueController::class, 'index']);
 	Route::get('queue/check-antrian', [App\Http\Controllers\QueueController::class, 'checkAntrian']);
@@ -29,7 +31,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('histories', App\Http\Controllers\HistoryController::class);
 
 	// ROUTE ADMIN
-	Route::middleware(['admin'])->group(function() {
+	Route::middleware(['admin'])->group(function () {
 		Route::post('doctors', [App\Http\Controllers\DoctorController::class, 'store']);
 		Route::put('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'update']);
 		Route::delete('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'destroy']);

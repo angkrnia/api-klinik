@@ -584,12 +584,45 @@ class QueueController extends Controller
         $query->whereStatus('done');
 
         $limit = $request['limit'] ?? 25;
-        $result = $query->with([PASIEN, DOKTER, HISTORY])->paginate($limit)->appends(request()->query());
+        $result = $query->with([PASIEN, DOKTER])->paginate($limit)->appends(request()->query());
 
         return response()->json([
             'code'             => 200,
             'status'           => true,
             'data'             => $result,
+        ]);
+    }
+
+    public function detailPharmacy(Queue $queue)
+    {
+        $result = $queue->load([PASIEN, DOKTER, HISTORY]);
+
+        return response()->json([
+            'code'   => 200,
+            'status' => true,
+            'data'   => $result,
+        ]);
+    }
+
+    public function completed(Queue $queue)
+    {
+        $user = Auth::user();
+        if ($user->role !== PERAWAT) {
+            return response()->json([
+                'code'    => 403,
+                'status'  => true,
+                'message' => 'Anda tidak memiliki izin melakukan action ini.R'
+            ], 403);
+        }
+
+        $queue->update([
+            'status' => 'completed',
+        ]);
+
+        return response()->json([
+            'code'    => 200,
+            'status'  => true,
+            'message' => 'Data berhasil diselesaikan'
         ]);
     }
 }

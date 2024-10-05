@@ -31,6 +31,7 @@ class HistoryController extends Controller
         }
 
         if (isset($request['from']) && isset($request['to'])) {
+            $to = \Carbon\Carbon::parse($to)->endOfDay();
             $query->whereBetween('created_at', [$from, $to]);
         }
 

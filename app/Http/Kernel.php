@@ -2,6 +2,8 @@
 
 namespace App\Http;
 
+use App\Console\Commands\DemoCron;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel

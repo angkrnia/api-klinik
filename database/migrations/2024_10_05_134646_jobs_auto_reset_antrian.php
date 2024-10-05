@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('histories', function (Blueprint $table) {
-            $table->string('teraphy')->nullable();
-            $table->string('pemeriksaan')->nullable();
+        Schema::create('jobs_auto_reset_antrian', function (Blueprint $table) {
+            $table->id();
+            $table->integer('last_queue');
+            $table->string('status_queue')->nullable();
+            $table->string('status_jobs')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -22,9 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('histories', function (Blueprint $table) {
-            $table->dropColumn('teraphy');
-            $table->dropColumn('pemeriksaan');
-        });
+        Schema::dropIfExists('jobs_auto_reset_antrian');
     }
 };
