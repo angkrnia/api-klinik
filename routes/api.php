@@ -8,6 +8,7 @@ Route::post('register', App\Http\Controllers\Auth\RegisterController::class);
 Route::post('forgot-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'forgotPassword']);
 Route::post('reset-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'resetPassword']);
 Route::get('public/check-antrian', [App\Http\Controllers\QueueController::class, 'publicAntrian']);
+Route::get('public/list-antrian', [App\Http\Controllers\QueueController::class, 'listAntrian']);
 Route::get('info-service', [App\Http\Controllers\ServiceController::class, 'index']);
 Route::post('info-service', [App\Http\Controllers\ServiceController::class, 'store']);
 

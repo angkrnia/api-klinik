@@ -190,6 +190,36 @@ class QueueController extends Controller
         ]);
     }
 
+    public function getListAntrian()
+    {
+        try {
+            $data = DB::select('CALL GET_LIST_ANTRIAN()');
+
+            if (count($data) > 0) {
+                return response()->json([
+                    'code'      => 200,
+                    'status'    => true,
+                    'message'   => 'Sukses',
+                    'data'      => $data
+                ]);
+            } else {
+                return response()->json([
+                    'code'      => 404,
+                    'status'    => false,
+                    'message'   => 'Tidak ada data antrian',
+                    'data'      => []
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'code'      => 500,
+                'status'    => false,
+                'message'   => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'data'      => []
+            ]);
+        }
+    }
+
     /**
      * Show the form for creating a new resource.
      */
