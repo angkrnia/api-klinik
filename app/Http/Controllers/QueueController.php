@@ -179,6 +179,7 @@ class QueueController extends Controller
     {
         $queueCount = DB::select('CALL GET_TOTAL_ANTRIAN()')[0]->total_antrian;
         $currentAntrian = DB::select('CALL GET_ANTRIAN_SAAT_INI')[0]->antrian_saat_ini;
+        $doctorName = DB::select('CALL GET_ANTRIAN_SAAT_INI')[0]->doctor_fullname;
         return response()->json([
             'code'      => 200,
             'status'    => true,
@@ -186,6 +187,7 @@ class QueueController extends Controller
             'data' => [
                 'antrian_hari_ini' => $queueCount,
                 'antrian_saat_ini' => $currentAntrian,
+                'nama_dokter'      => $doctorName,
             ]
         ]);
     }
