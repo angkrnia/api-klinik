@@ -48,7 +48,7 @@ class QueueController extends Controller
                         ->orWhere('status', 'on process');
                 })
                 ->value('queue');
-            $query->whereIn('patient_id', $patientIds);
+            // $query->whereIn('patient_id', $patientIds);
         }
         // elseif ($user->role === DOKTER) {
         //     $query->whereHas(DOKTER, function ($q) use ($user) {

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Patient;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdatePatientRequest extends FormRequest
 {
@@ -21,9 +22,11 @@ class UpdatePatientRequest extends FormRequest
      */
     public function rules(): array
     {
+        $recordNo = $this->input('record_no');
+
         return [
             'user_id'   => ['nullable', 'integer', 'exists:users,id'],
-            'record_no' => ['nullable', 'string', 'max:50', 'unique:patients,record_no'],
+            'record_no' => ['nullable', 'string', 'max:50', Rule::unique('patients', 'record_no')->ignore($recordNo, 'record_no')],
             'fullname'  => ['required', 'string', 'max:255'],
             'nama_keluarga'  => ['required', 'string', 'max:255'],
             'gender'    => ['required', 'string', 'max:20'],
