@@ -190,7 +190,7 @@ class QueueController extends Controller
         ]);
     }
 
-    public function getListAntrian()
+    public function listAntrian()
     {
         try {
             $data = DB::select('CALL GET_LIST_ANTRIAN()');
