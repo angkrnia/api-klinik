@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\AntrianEvent;
+use App\Events\VitalSignEvent;
 use App\Http\Requests\Queue\QueueRequest;
 use App\Models\Queue;
 use Carbon\Carbon;
@@ -487,6 +488,8 @@ class QueueController extends Controller
                 'temperature' => $request->temperature,
                 'complaint' => $request->complaint,
             ]);
+
+            AntrianEvent::dispatch();
 
             return response()->json([
                 'code' => 200,
