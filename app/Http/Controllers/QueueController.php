@@ -660,4 +660,34 @@ class QueueController extends Controller
             'message' => 'Data berhasil diselesaikan'
         ]);
     }
+
+    public function summaryQueueForDoctor()
+    {
+        try {
+            $data = DB::select('CALL GET_SUMMARY_STATUS_FOR_DOCTOR()');
+
+            if (count($data) > 0) {
+                return response()->json([
+                    'code'      => 200,
+                    'status'    => true,
+                    'message'   => 'Sukses',
+                    'data'      => $data[0]
+                ]);
+            } else {
+                return response()->json([
+                    'code'      => 404,
+                    'status'    => false,
+                    'message'   => 'Tidak ada data antrian',
+                    'data'      => []
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'code'      => 500,
+                'status'    => false,
+                'message'   => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'data'      => []
+            ]);
+        }
+    }
 }

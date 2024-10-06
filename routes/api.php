@@ -47,6 +47,7 @@ Route::middleware(['auth:api'])->group(function () {
 	// ROUTE DOKTER
 	Route::middleware(['doctor'])->group(function () {
 		Route::put('doctors/{doctor}', [App\Http\Controllers\DoctorController::class, 'update']);
+		Route::get('queue/summary', [App\Http\Controllers\QueueController::class, 'summaryQueueForDoctor']);
 		Route::put('queue/{queue}/panggil-antrian', [App\Http\Controllers\QueueController::class, 'panggilAntrian']);
 		Route::put('queue/{queue}', [App\Http\Controllers\QueueController::class, 'update']);
 		Route::post('reset-antrian', [App\Http\Controllers\QueueController::class, 'resetAntrian']);
