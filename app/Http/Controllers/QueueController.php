@@ -289,6 +289,7 @@ class QueueController extends Controller
             ]);
 
             $queue->history()->create([
+                'note' => $request->input('note'),
                 'complaint' => $request->input('complaint'),
                 'blood_pressure' => $request->input('blood_pressure'),
                 'height' => $request->input('height'),
@@ -473,7 +474,8 @@ class QueueController extends Controller
             'height' => ['required', 'string', 'max:255'],
             'weight' => ['required', 'string', 'max:255'],
             'temperature' => ['required', 'string', 'max:255'],
-            'complaint' => ['required', 'string', 'max:255'],
+            'complaint' => ['required', 'string'],
+            'note' => ['required', 'string'],
         ]);
 
         try {
@@ -487,6 +489,7 @@ class QueueController extends Controller
                 'weight' => $request->weight,
                 'temperature' => $request->temperature,
                 'complaint' => $request->complaint,
+                'note' => $request->note,
             ]);
 
             AntrianEvent::dispatch();

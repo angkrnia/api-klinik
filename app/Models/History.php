@@ -22,6 +22,7 @@ class History extends Model
         'saran',
         'pemeriksaan',
         'teraphy',
+        'note',
     ];
 
     public function queue()

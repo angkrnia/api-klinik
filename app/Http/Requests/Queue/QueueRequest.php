@@ -29,6 +29,7 @@ class QueueRequest extends FormRequest
             "weight" =>  ['nullable'],
             "temperature" =>  ['nullable'],
             "status" =>  ['nullable', 'string', 'max:255'],
+            "note" =>  ['nullable', 'string']
         ];
     }
 
