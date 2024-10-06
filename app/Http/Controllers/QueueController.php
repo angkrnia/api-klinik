@@ -183,7 +183,7 @@ class QueueController extends Controller
         return response()->json([
             'code'      => 200,
             'status'    => true,
-            'message'    => 'Sukses',
+            'message'   => 'Sukses',
             'data' => [
                 'antrian_hari_ini' => $queueCount,
                 'antrian_saat_ini' => $currentAntrian,
