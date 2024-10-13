@@ -37,8 +37,6 @@ class QueueController extends Controller
             $query->keywordSearch($searchKeyword);
         }
 
-        // if (!isset($request['data']) && @$request['data'] !== 'all') {
-        // }
         if ($user->role === PASIEN) {
             $antrianSaya = Queue::whereIn('patient_id', $patientIds)
                 ->where('id', '>', $lastQueueId)
@@ -48,13 +46,7 @@ class QueueController extends Controller
                         ->orWhere('status', 'on process');
                 })
                 ->value('queue');
-            // $query->whereIn('patient_id', $patientIds);
         }
-        // elseif ($user->role === DOKTER) {
-        //     $query->whereHas(DOKTER, function ($q) use ($user) {
-        //         $q->where('user_id', $user->doctor->id);
-        //     });
-        // }
 
         if (isset($request['date']) && !empty($request['date'])) {
             $date = $request['date'];
@@ -130,10 +122,7 @@ class QueueController extends Controller
                 ]
             ]);
         } else {
-            $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
-            if (!$lastQueueId) {
-                $lastQueueId = 0;
-            }
+            $lastQueueId = lastQueueId();
             $patientIds = $user->patient->pluck('id')->toArray();
             $antrianSaya = Queue::whereIn('patient_id', $patientIds)
                 ->where('id', '>', $lastQueueId)
@@ -239,10 +228,7 @@ class QueueController extends Controller
         try {
             DB::beginTransaction();
             $patientId = $request->input('patient_id');
-            $lastQueueId = Queue::where('is_last_queue', true)->orderByDesc('created_at')->value('id');
-            if (!$lastQueueId) {
-                $lastQueueId = 0;
-            }
+            $lastQueueId = lastQueueId();
             $existingWaitingQueue = Queue::where('id', '>', $lastQueueId)
                 ->where('patient_id', $patientId)
                 ->whereIn('status', ['waiting', 'on waiting'])
@@ -261,23 +247,32 @@ class QueueController extends Controller
             // CARI DOKTER YANG SEDANG BERTUGAS
             // $query = "SELECT id, fullname FROM doctors WHERE DAYNAME(NOW()) BETWEEN start_day AND end_day AND TIME(NOW()) BETWEEN start_time AND end_time LIMIT 1";
 
-            $query = "SELECT id, fullname
-            FROM doctors
-            WHERE 
-                DAYOFWEEK(NOW()) BETWEEN 
-                    FIELD(LOWER(start_day), ?, ?, ?, ?, ?, ?, ?) AND 
-                    FIELD(LOWER(end_day), ?, ?, ?, ?, ?, ?, ?)
-                AND
-                (
-                    (start_time < end_time AND TIME(NOW()) BETWEEN start_time AND end_time)
-                    OR
-                    (start_time > end_time AND (TIME(NOW()) >= start_time OR TIME(NOW()) <= end_time))
-                )";
+            // $query = "SELECT id, fullname
+            // FROM doctors
+            // WHERE 
+            //     DAYOFWEEK(NOW()) BETWEEN 
+            //         FIELD(LOWER(start_day), ?, ?, ?, ?, ?, ?, ?) AND 
+            //         FIELD(LOWER(end_day), ?, ?, ?, ?, ?, ?, ?)
+            //     AND
+            //     (
+            //         (start_time < end_time AND TIME(NOW()) BETWEEN start_time AND end_time)
+            //         OR
+            //         (start_time > end_time AND (TIME(NOW()) >= start_time OR TIME(NOW()) <= end_time))
+            //     )";
 
-            $days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-            $params = [...$days, ...$days];
+            // $days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            // $params = [...$days, ...$days];
 
-            $doctor = DB::select($query, $params);
+            // $doctor = DB::select($query, $params);
+            $currentDay = Carbon::now('Asia/Jakarta')->format('l');
+            $currentTime = Carbon::now('Asia/Jakarta')->format('H:i:s');
+
+            $query = "SELECT d.id AS id FROM doctor_schedules s JOIN doctors d ON s.doctor_id = d.id WHERE s.day = UPPER(?) AND ? BETWEEN s.start_time AND s.end_time AND s.status = 1";
+
+            $doctor = DB::select($query, [
+                $currentDay,
+                $currentTime
+            ]);
 
             $status = empty($request->input('height')) || empty($request->input('weight')) || empty($request->input('temperature')) ? 'on waiting' : 'waiting';
 
@@ -396,10 +391,12 @@ class QueueController extends Controller
     public function selesai(Request $request, Queue $queue)
     {
         $request->validate([
-            'diagnosa'  => ['nullable', 'string', 'max:255'],
-            'saran'     => ['nullable', 'string', 'max:255'],
-            'teraphy'     => ['nullable', 'string', 'max:255'],
-            'pemeriksaan'     => ['nullable', 'string', 'max:255'],
+            'diagnosa'  => ['required', 'string'],
+            'saran'     => ['nullable', 'string'],
+            'teraphy'     => ['nullable', 'string'],
+            'pemeriksaan'  => ['nullable', 'string'],
+            'tindakan'     => ['nullable', 'string'],
+            'note'     => ['nullable', 'string'],
         ]);
 
         try {
@@ -415,13 +412,15 @@ class QueueController extends Controller
                     'teraphy' => $request->teraphy,
                     'pemeriksaan' => $request->pemeriksaan,
                     'patient_id' => $queue->patient_id,
+                    'note' => $queue->note,
+                    'tindakan' => $queue->tindakan,
                 ]
             );
 
             return response()->json([
                 'code' => 200,
                 'status' => true,
-                'message' => 'Antrian berhasil diupdate.',
+                'message' => 'Antrian berhasil diselesaikan.',
             ]);
         } catch (\Throwable $th) {
             if ($th instanceof ModelNotFoundException) {
@@ -469,18 +468,33 @@ class QueueController extends Controller
 
     public function vitalSign(Request $request, Queue $queue)
     {
+        $user = Auth::user();
+        if ($user->role !== PERAWAT) {
+            return response()->json([
+                'code'    => 403,
+                'status'  => false,
+                'message' => 'Hanya perawat yang dapat melakukan action ini.'
+            ], 403);
+        }
+
         $request->validate([
+            'doctor_id' => ['required', 'integer', 'exists:doctors,id'],
             'blood_pressure' => ['required', 'string', 'max:255'],
             'height' => ['required', 'string', 'max:255'],
             'weight' => ['required', 'string', 'max:255'],
             'temperature' => ['required', 'string', 'max:255'],
             'complaint' => ['required', 'string'],
             'note' => ['required', 'string'],
+            'tindakan' => ['nullable', 'string'],
+        ], [
+            'doctor_id.required' => 'Pilihan Dokter wajib diisi!',
+            'doctor_id.exists' => 'Dokter tidak ditemukan!',
         ]);
 
         try {
             $queue->update([
-                'status' => 'waiting'
+                'status' => 'waiting',
+                'doctor_id' => $request->doctor_id
             ]);
 
             $queue->history()->update([
@@ -490,6 +504,7 @@ class QueueController extends Controller
                 'temperature' => $request->temperature,
                 'complaint' => $request->complaint,
                 'note' => $request->note,
+                'tindakan' => $request->tindakan,
             ]);
 
             AntrianEvent::dispatch();
@@ -497,7 +512,7 @@ class QueueController extends Controller
             return response()->json([
                 'code' => 200,
                 'status' => true,
-                'message' => 'Antrian berhasil diupdate.',
+                'message' => 'Berhasil input vital sign.',
             ]);
         } catch (\Throwable $th) {
             if ($th instanceof ModelNotFoundException) {

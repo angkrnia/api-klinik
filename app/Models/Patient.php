@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 
 class Patient extends Model
 {
@@ -41,5 +43,35 @@ class Patient extends Model
                 $query->orWhere($column, 'LIKE', "%$searchKeyword%");
             }
         });
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($patient) {
+            if (isset($patient->no_ktp)) {
+                $patient->no_ktp = Crypt::encrypt($patient->no_ktp);
+            }
+        });
+
+        static::updating(function ($patient) {
+            if (isset($patient->no_ktp)) {
+                $patient->no_ktp = Crypt::encrypt($patient->no_ktp);
+            }
+        });
+    }
+
+    public function getNoKtpAttribute($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        if (!$value) {
+            return null;
+        }
+
+        return Crypt::decrypt($value);
     }
 }

@@ -24,12 +24,14 @@ class QueueRequest extends FormRequest
         return [
             "complaint" =>  ['required', 'string', 'max:255'],
             "patient_id" =>  ['required', 'exists:patients,id'],
+            "doctor_id" =>  ['nullable', 'exists:doctors,id'],
             "blood_pressure" =>  ['nullable', 'string', 'max:255'],
             "height" =>  ['nullable'],
             "weight" =>  ['nullable'],
             "temperature" =>  ['nullable'],
             "status" =>  ['nullable', 'string', 'max:255'],
-            "note" =>  ['nullable', 'string']
+            "note" =>  ['nullable', 'string'],
+            "tindakan" =>  ['nullable', 'string'],
         ];
     }
 

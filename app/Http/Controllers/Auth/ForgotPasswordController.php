@@ -6,36 +6,49 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ForgotPasswordController extends Controller
 {
     public function forgotPassword(Request $request)
     {
         $request->validate([
-            'email' => ['required', 'max:15', 'exists:users,email'],
+            'phone' => [
+                'required',
+                'regex:/^(08[0-9]{0,13}|628[0-9]{0,12})$/',
+                'digits_between:10,15',
+            ]
+        ], [
+            'phone.required' => 'No HP wajib diisi.',
+            'phone.regex' => 'No HP harus diawali dengan 08 atau 628.',
+            'phone.digits_between' => 'No HP harus terdiri dari antara 10 hingga 15 digit.'
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        if (preg_match('/^08/',  $request->phone)) {
+            $phone = '628' . substr($request->phone, 2);
+            $request->merge(['phone' => $phone]);
+        }
+
+        $user = User::where('phone', $request->phone)->first();
 
         if (!$user) {
             return
-            response()->json([
-                'code' => 404,
-                'status' => true,
-                'message' => 'User tidak ditemukan.'
-            ]);
+                response()->json([
+                    'code' => 404,
+                    'status' => true,
+                    'message' => 'User tidak ditemukan.'
+                ]);
         }
-
-        $key = Str::random(100);
+        $key = base64_encode($user);
         $user->update(['remember_token' => $key]);
 
-        // send link to email
-        $this->sendLinkResetPassword($key, $request->email);
+        // send link to phone
+        $this->sendLinkResetPassword($key, $request->phone);
 
         return response()->json([
             'code' => 200,
             'status' => true,
-            'message' => 'Link pergantian password telah dikirim ke email Anda.'
+            'message' => 'Link pergantian password telah dikirim ke Whatsapp Anda.'
         ]);
     }
 

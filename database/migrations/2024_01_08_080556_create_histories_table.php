@@ -15,13 +15,17 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('patient_id');
             $table->unsignedBigInteger('queue_id');
-            $table->string('blood_pressure')->default('120/80');
+            $table->string('blood_pressure')->nullable();
             $table->decimal('height', 5, 2)->nullable();
             $table->decimal('weight', 5, 2)->nullable();
-            $table->decimal('temperature', 5, 2)->default(36);
+            $table->decimal('temperature', 5, 2)->nullable();
             $table->string('complaint')->nullable();
             $table->string('diagnosa')->nullable();
+            $table->text('note')->nullable();
             $table->string('saran')->nullable();
+            $table->string('teraphy')->nullable();
+            $table->string('pemeriksaan')->nullable();
+            $table->string('tindakan')->nullable();
             $table->timestamps();
 
             $table->foreign('patient_id')->on('patients')->references('id')->onDelete('cascade');

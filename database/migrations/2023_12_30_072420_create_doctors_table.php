@@ -16,11 +16,12 @@ return new class extends Migration
             $table->string('fullname');
             $table->string('phone');
             $table->string('avatar')->nullable();
+            $table->string('gender', 1)->nullable();
             $table->text('description')->nullable();
-            $table->string('start_day', 10);
-            $table->string('end_day', 10);
-            $table->time('start_time');
-            $table->time('end_time');
+            $table->string('start_day', 10)->nullable();
+            $table->string('end_day', 10)->nullable();
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->timestamps();
 

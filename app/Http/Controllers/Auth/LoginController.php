@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class LoginController extends Controller
@@ -16,20 +17,34 @@ class LoginController extends Controller
     public function index(Request $request)
     {
         $request->validate([
-            'email' => ['required', 'string', 'email', 'max:255'],
+            'phone' => [
+                'required',
+                'regex:/^(08[0-9]{0,13}|628[0-9]{0,12})$/',
+                'digits_between:10,15',
+            ],
             'password' => ['required', 'string', 'max:255']
+        ], [
+            'phone.required' => 'No HP wajib diisi.',
+            'phone.regex' => 'No HP harus diawali dengan 08 atau 628.',
+            'phone.digits_between' => 'No HP harus terdiri dari antara 10 hingga 15 digit.',
+            'password.required' => 'Password wajib diisi.',
+            'password.max' => 'Password tidak boleh lebih dari 255 karakter.',
         ]);
 
         try {
+            if (preg_match('/^08/',  $request->phone)) {
+                $phone = '628' . substr($request->phone, 2);
+                $request->merge(['phone' => $phone]);
+            }
 
-            $credentials = $request->only('email', 'password');
+            $credentials = $request->only('phone', 'password');
             $token = Auth::attempt($credentials);
-            
+
             if (!$token) {
                 return response()->json([
                     'code' => 401,
                     'status' => false,
-                    'message' => 'Email atau password salah.',
+                    'message' => 'No Whatsapp atau password salah.',
                 ], 401);
             }
 
@@ -46,7 +61,8 @@ class LoginController extends Controller
                 'message' => 'Login berhasil.',
                 'data' => [
                     'token' => $token,
-                    'refresh_token' => $refreshToken
+                    'refresh_token' => $refreshToken,
+                    'user' => $user
                 ]
             ]);
         } catch (\Throwable $th) {
@@ -81,6 +97,5 @@ class LoginController extends Controller
         } else {
             return response()->json(['error' => 'Invalid refresh token'], 401);
         }
-
     }
 }

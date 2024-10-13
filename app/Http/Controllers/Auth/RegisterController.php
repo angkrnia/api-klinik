@@ -18,9 +18,49 @@ class RegisterController extends Controller
     {
         $request->validate([
             'fullname' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', Rule::unique('users', 'email')],
+            'phone' => [
+                'required',
+                'regex:/^(08[0-9]{0,13}|628[0-9]{0,12})$/', // Memastikan diawali dengan 08 atau 628
+                'digits_between:10,15', // Memastikan panjang antara 10 sampai 15 angka
+                Rule::unique('users', 'phone'),
+            ],
             'password' => ['required', 'min:6'],
+        ], [
+            'fullname.required' => 'Nama Lengkap wajib diisi.',
+            'phone.required' => 'No HP wajib diisi.',
+            'phone.regex' => 'No HP harus diawali dengan 08 atau 628.',
+            'phone.digits_between' => 'No HP harus terdiri dari antara 10 hingga 15 digit.',
+            'password.required' => 'Password wajib diisi.',
+            'password.max' => 'Password tidak boleh lebih dari 255 karakter.',
+            'phone.unique' => 'No HP sudah pernah terdaftar.',
         ]);
+
+        try {
+            if (preg_match('/^08/',  $request->phone)) {
+                $phone = '628' . substr($request->phone, 2);
+                $request->merge(['phone' => $phone]);
+            }
+
+            $request->validate([
+                'phone' => [
+                    'required',
+                    'regex:/^(08[0-9]{0,13}|628[0-9]{0,12})$/', // Memastikan diawali dengan 08 atau 628
+                    'digits_between:10,15', // Memastikan panjang antara 10 sampai 15 angka
+                    Rule::unique('users', 'phone'),
+                ],
+            ], [
+                'phone.required' => 'No HP wajib diisi.',
+                'phone.regex' => 'No HP harus diawali dengan 08 atau 628.',
+                'phone.digits_between' => 'No HP harus terdiri dari antara 10 hingga 15 digit.',
+                'phone.unique' => 'No HP sudah pernah terdaftar.',
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'code'    => 422,
+                'status'  => false,
+                'message' => $th->getMessage() ?: 'Registrasi gagal.',
+            ], 422);
+        }
 
         DB::beginTransaction();
         try {
@@ -33,7 +73,7 @@ class RegisterController extends Controller
             // ]);
 
             DB::commit();
-    
+
             return response()->json([
                 'code'      => 201,
                 'status'    => true,
