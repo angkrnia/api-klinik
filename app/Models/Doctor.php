@@ -37,4 +37,13 @@ class Doctor extends Model
             }
         });
     }
+
+    public function getPhoneAttribute($value)
+    {
+        if (preg_match('/^628/',  $value)) {
+            return '0' . substr($value, 2);
+        } else {
+            return $value;
+        }
+    }
 }

@@ -59,7 +59,7 @@ class DoctorController extends Controller
             DB::beginTransaction();
             $imageUrl = null;
 
-            if($request->has('image')) {
+            if ($request->has('image')) {
                 $imageFile = $request->file('image');
                 $imageName = date('md_His') . '_' . $imageFile->getClientOriginalName();
                 $imagePath = $imageFile->move(public_path('doctors'), $imageName);
@@ -160,6 +160,36 @@ class DoctorController extends Controller
             'code'      => 200,
             'status'    => true,
             'message'   => 'Dokter berhasil dihapus.',
+        ]);
+    }
+
+    /**
+     * List All Dokter
+     */
+    public function listAllDoctor()
+    {
+        $currentDay = Carbon::now('Asia/Jakarta')->format('l');
+        $currentTime = Carbon::now('Asia/Jakarta')->format('H:i:s');
+
+        $query = "SELECT d.id AS id, d.fullname as fullname FROM doctor_schedules s JOIN doctors d ON s.doctor_id = d.id WHERE s.day = UPPER(?) AND ? BETWEEN s.start_time AND s.end_time AND s.status = 1";
+        $onDutyDoctors = DB::select($query, [
+            $currentDay,
+            $currentTime
+        ]);
+        $allDoctors = Doctor::all(['id', 'fullname']);
+        $onDutyDoctorIds = collect($onDutyDoctors)->pluck('id')->toArray();
+        $result = $allDoctors->map(function ($doctor) use ($onDutyDoctorIds) {
+            return [
+                'id' => $doctor->id,
+                'fullname' => $doctor->fullname,
+                'is_on_duty' => in_array($doctor->id, $onDutyDoctorIds),
+            ];
+        });
+
+        return response()->json([
+            'code'      => 200,
+            'status'    => true,
+            'data'      => $result
         ]);
     }
 }

@@ -13,7 +13,7 @@ Route::get('info-service', [App\Http\Controllers\ServiceController::class, 'inde
 Route::post('info-service', [App\Http\Controllers\ServiceController::class, 'store']);
 
 Route::middleware(['auth:api'])->group(function () {
-
+	Route::get('doctors-list', [App\Http\Controllers\DoctorController::class, 'listAllDoctor']);
 	Route::get('patient-list-by-user', [App\Http\Controllers\PatientController::class, 'patientListByUser']);
 	Route::apiResource('patients', App\Http\Controllers\PatientController::class)->except(['destroy']);
 	Route::get('doctors', [App\Http\Controllers\DoctorController::class, 'index']);

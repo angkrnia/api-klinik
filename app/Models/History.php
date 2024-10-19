@@ -24,6 +24,7 @@ class History extends Model
         'teraphy',
         'note',
         'tindakan',
+        'vital_sign_status',
     ];
 
     public function queue()

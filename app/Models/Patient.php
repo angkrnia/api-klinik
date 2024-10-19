@@ -45,21 +45,9 @@ class Patient extends Model
         });
     }
 
-    protected static function boot()
+    public function setNoKtpAttribute($value)
     {
-        parent::boot();
-
-        static::creating(function ($patient) {
-            if (isset($patient->no_ktp)) {
-                $patient->no_ktp = Crypt::encrypt($patient->no_ktp);
-            }
-        });
-
-        static::updating(function ($patient) {
-            if (isset($patient->no_ktp)) {
-                $patient->no_ktp = Crypt::encrypt($patient->no_ktp);
-            }
-        });
+        $this->attributes['no_ktp'] = encrypt($value);
     }
 
     public function getNoKtpAttribute($value)
@@ -72,6 +60,15 @@ class Patient extends Model
             return null;
         }
 
-        return Crypt::decrypt($value);
+        return decrypt($value);
+    }
+
+    public function getPhoneAttribute($value)
+    {
+        if (preg_match('/^628/',  $value)) {
+            return '0' . substr($value, 2);
+        } else {
+            return $value;
+        }
     }
 }

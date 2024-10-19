@@ -58,9 +58,12 @@ class QueueController extends Controller
         if (isset($request['status']) && !empty($request['status'])) {
             $status = $request['status'];
             if ($status === 'vital-sign') {
-                $status = 'on waiting';
+                $query->whereHas(HISTORY, function ($q) {
+                    $q->where('vital_sign_status', false);
+                });
+            } else {
+                $query->whereStatus($status);
             }
-            $query->whereStatus($status);
         }
 
         $sort = $request['sort'] ?? null;
@@ -231,7 +234,7 @@ class QueueController extends Controller
             $lastQueueId = lastQueueId();
             $existingWaitingQueue = Queue::where('id', '>', $lastQueueId)
                 ->where('patient_id', $patientId)
-                ->whereIn('status', ['waiting', 'on waiting'])
+                ->whereIn('status', ['waiting', 'on waiting', 'on process'])
                 ->first();
 
             if ($existingWaitingQueue) {
@@ -269,10 +272,12 @@ class QueueController extends Controller
 
             $query = "SELECT d.id AS id FROM doctor_schedules s JOIN doctors d ON s.doctor_id = d.id WHERE s.day = UPPER(?) AND ? BETWEEN s.start_time AND s.end_time AND s.status = 1";
 
-            $doctor = DB::select($query, [
-                $currentDay,
-                $currentTime
-            ]);
+            if (!isset($request->doctor_id)) {
+                $doctor = DB::select($query, [
+                    $currentDay,
+                    $currentTime
+                ]);
+            }
 
             $status = empty($request->input('height')) || empty($request->input('weight')) || empty($request->input('temperature')) ? 'on waiting' : 'waiting';
 
@@ -280,10 +285,10 @@ class QueueController extends Controller
                 'status' => $status,
                 'queue' => $newQueueNumber,
                 'patient_id' => $request->input('patient_id'),
-                'doctor_id' => $doctor[0]->id ?? 1,
+                'doctor_id' => isset($request->doctor_id) ? $request->doctor_id : $doctor[0]->id,
             ]);
 
-            $queue->history()->create([
+            $payload = [
                 'note' => $request->input('note'),
                 'complaint' => $request->input('complaint'),
                 'blood_pressure' => $request->input('blood_pressure'),
@@ -291,7 +296,13 @@ class QueueController extends Controller
                 'weight' => $request->input('weight'),
                 'temperature' => $request->input('temperature'),
                 'patient_id' => $request->input('patient_id'),
-            ]);
+            ];
+
+            if ($status === 'waiting') {
+                $payload['vital_sign_status'] = true;
+            }
+
+            $queue->history()->create($payload);
 
             DB::commit();
             return response()->json([
@@ -499,12 +510,13 @@ class QueueController extends Controller
 
             $queue->history()->update([
                 'blood_pressure' => $request->blood_pressure,
-                'height' => $request->height,
-                'weight' => $request->weight,
-                'temperature' => $request->temperature,
+                'height' => formatDecimal($request->height),
+                'weight' => formatDecimal($request->weight),
+                'temperature' => formatDecimal($request->temperature),
                 'complaint' => $request->complaint,
                 'note' => $request->note,
                 'tindakan' => $request->tindakan,
+                'vital_sign_status' => true
             ]);
 
             AntrianEvent::dispatch();
@@ -515,6 +527,7 @@ class QueueController extends Controller
                 'message' => 'Berhasil input vital sign.',
             ]);
         } catch (\Throwable $th) {
+            Log::error($th);
             if ($th instanceof ModelNotFoundException) {
                 return response()->json(['error' => 'Antrian tidak ditemukan'], 404);
             } else {
