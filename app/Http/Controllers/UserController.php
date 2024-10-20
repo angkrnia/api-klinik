@@ -56,10 +56,11 @@ class UserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             // 'record_no' => ['nullable', 'string', 'max:255'],
             'fullname' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
             // 'gender' => ['nullable', 'string', 'max:12'],
             // 'birthday' => ['nullable', 'string', 'max:15'],
             // 'age' => ['nullable', 'integer'],
-            // 'phone' => ['nullable', 'string', 'max:20'],
             // 'address' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -79,6 +80,7 @@ class UserController extends Controller
             // Jika dokter
             if (auth()->user()->role === DOKTER) {
                 $user->doctor()->update([
+                    'fullname' => $request->fullname,
                     'phone' => $request->phone,
                     'description' => $request->description,
                 ]);

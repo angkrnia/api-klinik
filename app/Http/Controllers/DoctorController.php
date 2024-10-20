@@ -18,27 +18,53 @@ class DoctorController extends Controller
      */
     public function index(Request $request)
     {
-        $request = $request->query();
-        $query = Doctor::query();
+        // $request = $request->query();
+        // $query = Doctor::query();
 
-        if (isset($request['search'])) {
-            $searchKeyword = $request['search'];
-            $query->keywordSearch($searchKeyword);
-        }
+        // if (isset($request['search'])) {
+        //     $searchKeyword = $request['search'];
+        //     $query->keywordSearch($searchKeyword);
+        // }
 
-        $query->orderBy('created_at', 'desc');
+        // $query->orderBy('created_at', 'desc');
 
-        if (isset($request['limit']) || isset($request['page'])) {
-            $limit = $request['limit'] ?? 10;
-            $result = $query->with([USER])->paginate($limit)->appends(request()->query());
-        } else {
-            $result = $query->with([USER])->get(); // Untuk Print atau Download
-        }
+        // if (isset($request['limit']) || isset($request['page'])) {
+        //     $limit = $request['limit'] ?? 10;
+        //     $result = $query->with([USER])->paginate($limit)->appends(request()->query());
+        // } else {
+        //     $result = $query->with([USER])->get(); // Untuk Print atau Download
+        // }
+
+        // return response()->json([
+        //     'code'      => 200,
+        //     'status'    => true,
+        //     'data'      => $result
+        // ]);
+
+        $query = "SELECT 
+            d.id,
+            d.fullname,
+            d.phone,
+            d.avatar,
+            d.description,
+            GROUP_CONCAT(DISTINCT CONCAT(ds.day, '|', ds.start_time, '-', ds.end_time) ORDER BY ds.day SEPARATOR ', ') AS schedule
+        FROM doctor_schedules ds
+        JOIN doctors d ON ds.doctor_id = d.id
+        WHERE (? IS NULL OR d.fullname LIKE CONCAT('%', ?, '%'))
+        GROUP BY d.id
+        ORDER BY d.fullname";
+
+        $searchTerm = $request->search ?? null;
+
+        $data = DB::select($query, [
+            $searchTerm,
+            $searchTerm,
+        ]);
 
         return response()->json([
             'code'      => 200,
             'status'    => true,
-            'data'      => $result
+            'data'      => $data
         ]);
     }
 
