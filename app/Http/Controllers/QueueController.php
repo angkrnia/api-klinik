@@ -502,6 +502,7 @@ class QueueController extends Controller
             'complaint' => ['required', 'string'],
             'note' => ['required', 'string'],
             'tindakan' => ['nullable', 'string'],
+            'record_no' => ['nullable', 'string'],
         ], [
             'doctor_id.required' => 'Pilihan Dokter wajib diisi!',
             'doctor_id.exists' => 'Dokter tidak ditemukan!',
@@ -512,6 +513,10 @@ class QueueController extends Controller
                 'status' => 'waiting',
                 'doctor_id' => $request->doctor_id
             ]);
+
+            if (isset($request['record_no']) && !empty($request['record_no'])) {
+                $queue->patient()->update(['record_no' => $request->record_no]);
+            }
 
             $queue->history()->update([
                 'blood_pressure' => $request->blood_pressure,
