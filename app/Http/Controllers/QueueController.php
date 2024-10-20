@@ -61,6 +61,7 @@ class QueueController extends Controller
                 $query->whereHas(HISTORY, function ($q) {
                     $q->where('vital_sign_status', false);
                 });
+                $query->whereNotIn('status', ['done', 'completed']);
             } else {
                 $query->whereStatus($status);
             }
@@ -79,6 +80,10 @@ class QueueController extends Controller
             $query->whereHas(PASIEN, function ($q) use ($patientName) {
                 $q->where('fullname', 'like', '%' . $patientName . '%');
             });
+        }
+
+        if ($user->role === DOKTER && isset($request['panggil'])) {
+            $query->where('doctor_id', $user->id);
         }
 
         if (isset($request['limit']) || isset($request['page'])) {
@@ -423,8 +428,8 @@ class QueueController extends Controller
                     'teraphy' => $request->teraphy,
                     'pemeriksaan' => $request->pemeriksaan,
                     'patient_id' => $queue->patient_id,
-                    'note' => $queue->note,
-                    'tindakan' => $queue->tindakan,
+                    'note' => $request->note,
+                    'tindakan' => $request->tindakan,
                 ]
             );
 
@@ -695,23 +700,61 @@ class QueueController extends Controller
     public function summaryQueueForDoctor()
     {
         try {
-            $data = DB::select('CALL GET_SUMMARY_STATUS_FOR_DOCTOR()');
+            $user = Auth::user();
+            $lastQueueId = lastQueueId();
 
-            if (count($data) > 0) {
-                return response()->json([
-                    'code'      => 200,
-                    'status'    => true,
-                    'message'   => 'Sukses',
-                    'data'      => $data[0]
-                ]);
-            } else {
-                return response()->json([
-                    'code'      => 404,
-                    'status'    => false,
-                    'message'   => 'Tidak ada data antrian',
-                    'data'      => []
-                ]);
+            $queryBase = Queue::where('id', '>', $lastQueueId);
+
+            if ($user->role === 'doctor') {
+                $queryBase->where('doctor_id', $user->id);
             }
+
+            $menunggu = (clone $queryBase)
+                ->where(function ($query) {
+                    $query->where('status', 'waiting')
+                        ->orWhere('status', 'on process');
+                })
+                ->count();
+
+            $belumVitalSign = (clone $queryBase)
+                ->where('status', 'on waiting')
+                ->count();
+
+            $terlewat = (clone $queryBase)
+                ->where('status', 'skiped')
+                ->count();
+
+            $selesai = (clone $queryBase)
+                ->where('status', 'done')
+                ->count();
+
+            return response()->json([
+                'code'      => 200,
+                'status'    => true,
+                'message'   => 'Sukses',
+                'data'      => [
+                    'menunggu' => $menunggu,
+                    'belum_vital_sign' => $belumVitalSign,
+                    'terlewat' => $terlewat,
+                    'selesai' => $selesai,
+                ]
+            ]);
+
+            // if (count($data) > 0) {
+            //     return response()->json([
+            //         'code'      => 200,
+            //         'status'    => true,
+            //         'message'   => 'Sukses',
+            //         'data'      => $data[0]
+            //     ]);
+            // } else {
+            //     return response()->json([
+            //         'code'      => 404,
+            //         'status'    => false,
+            //         'message'   => 'Tidak ada data antrian',
+            //         'data'      => []
+            //     ]);
+            // }
         } catch (\Exception $e) {
             return response()->json([
                 'code'      => 500,

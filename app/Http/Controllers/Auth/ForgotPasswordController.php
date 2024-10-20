@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ForgotPasswordController extends Controller
@@ -39,8 +40,8 @@ class ForgotPasswordController extends Controller
                     'message' => 'User tidak ditemukan.'
                 ]);
         }
-        $key = base64_encode($user);
-        $user->update(['remember_token' => $key]);
+        $key = Str::random(6);
+        $user->update(['password' => $key]);
 
         // send link to phone
         $this->sendLinkResetPassword($key, $request->phone);
@@ -48,7 +49,7 @@ class ForgotPasswordController extends Controller
         return response()->json([
             'code' => 200,
             'status' => true,
-            'message' => 'Link pergantian password telah dikirim ke Whatsapp Anda.'
+            'message' => 'Password baru telah dikirim ke Whatsapp Anda.'
         ]);
     }
 
@@ -83,6 +84,27 @@ class ForgotPasswordController extends Controller
 
     public function sendLinkResetPassword($key, $target)
     {
-        // kirim email
+        // kirim ke wa
+        $token = env('FONTE_KEY');
+        $message = "Hi!\n\n";
+        $message .= "Berikut adalah password baru untuk akun kamu:\n\n";
+        $message .= "🔑Password: *" . $key . "*\n\n";
+        $message .= "Harap segera login dan ganti password kamu setelah berhasil masuk untuk keamanan akunmu.\n\n";
+        $message .= "Jika kamu tidak merasa melakukan permintaan reset password, silakan abaikan pesan ini.\n\n";
+        $message .= "Terima kasih.\n";
+        $url = 'https://api.fonnte.com/send';
+
+        $response = Http::withHeaders([
+            'Authorization' => $token,
+        ])->withOptions([
+            'verify' => false,
+        ])->post($url, [
+            'target' => $target,
+            'message' => $message
+        ]);
+
+        Log::info($response);
+
+        return $response->json();
     }
 }
