@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ServiceController extends Controller
 {
@@ -43,7 +44,7 @@ class ServiceController extends Controller
                     ]
                 ]
             ]
-        ]);        
+        ]);
     }
 
     /**
@@ -81,5 +82,17 @@ class ServiceController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    /**
+     * App Version
+     */
+    public function appVersion(Request $request)
+    {
+        return response()->json([
+            "statusCode" => 200,
+            "message" => "Success",
+            "data" => DB::table('app_config')->first(['version', 'description', 'url', 'is_force_update']),
+        ]);
     }
 }
