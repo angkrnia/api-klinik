@@ -51,7 +51,7 @@ class DoctorController extends Controller
         FROM doctor_schedules ds
         JOIN doctors d ON ds.doctor_id = d.id
         WHERE (? IS NULL OR d.fullname LIKE CONCAT('%', ?, '%'))
-        GROUP BY d.id
+        GROUP BY d.id, d.fullname, d.phone, d.avatar, d.description
         ORDER BY d.fullname";
 
         $searchTerm = $request->search ?? null;
