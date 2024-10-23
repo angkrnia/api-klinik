@@ -59,17 +59,14 @@ class QueueController extends Controller
             $status = $request['status'];
             if ($status === 'done') {
                 $query->where('status', 'done')->orWhere('status', 'completed');
+            } else if ($status === 'vital-sign') {
+                $query->whereHas(HISTORY, function ($q) {
+                    $q->where('vital_sign_status', false);
+                });
+                $query->whereNotIn('status', ['done', 'completed']);
             } else {
-                if ($status === 'vital-sign') {
-                    $query->whereHas(HISTORY, function ($q) {
-                        $q->where('vital_sign_status', false);
-                    });
-                    $query->whereNotIn('status', ['done', 'completed']);
-                } else {
-                    $query->whereStatus($status);
-                }
+                $query->whereStatus($status);
             }
-
         }
 
         $sort = $request['sort'] ?? null;
